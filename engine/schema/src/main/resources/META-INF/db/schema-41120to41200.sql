@@ -43,7 +43,14 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'Storag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'StorageManager', 'kvm.storage.online.migration.wait', '10800', 'Timeout in seconds for online (live) storage migration to complete on KVM (migrateVirtualMachineWithVolume)', '10800', null, 'Global', 0);
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'StorageManager', 'max.number.managed.clustered.file.systems', '200', 'XenServer and VMware only: Maximum number of managed SRs or datastores per compute cluster', '200', null, 'Cluster', 0);
 
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'StorageManager', 's3.hostname', null, 'S3 Hostname', null, null, 'Global', 0);
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'StorageManager', 's3.access.key.id', null, 'S3 Access Key ID', null, null, 'Global', 0);
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'StorageManager', 's3.secret.access.key', null, 'S3 Secret Access Key', null, null, 'Global', 0);
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'StorageManager', 's3.bucket', null, 'S3 Bucket', null, null, 'Global', 0);
+CREATE TABLE `cloud`.`backup_configuration` (
+  `name` varchar(255) NOT NULL,
+  `value` varchar(255) NOT NULL,
+  `description` varchar(1024) NOT NULL,
+  PRIMARY KEY  (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT IGNORE INTO `cloud`.`backup_configuration` VALUES ('s3.name', null, 'S3 Name');
+INSERT IGNORE INTO `cloud`.`backup_configuration` VALUES ('s3.access.key', null, 'S3 Access Key');
+INSERT IGNORE INTO `cloud`.`backup_configuration` VALUES ('s3.secret.key', null, 'S3 Secret Key');
+INSERT IGNORE INTO `cloud`.`backup_configuration` VALUES ('s3.bucket', null, 'S3 Bucket');
