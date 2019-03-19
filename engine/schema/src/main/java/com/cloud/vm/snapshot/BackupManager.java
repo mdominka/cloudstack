@@ -16,17 +16,27 @@
 // under the License.
 package com.cloud.vm.snapshot;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
+import org.apache.cloudstack.api.BackupAddConfigurationCmd;
 import org.apache.cloudstack.api.BackupConfigurationResponse;
+import org.apache.cloudstack.api.BackupDeleteConfigurationCmd;
 import org.apache.cloudstack.api.BackupListConfigurationCmd;
 
 import java.util.List;
 
 public interface BackupManager extends PluggableService {
-    BackupConfigurationResponse createBackupConfigurationResponse(BackupConfigurationVO configuration);
+  BackupConfigurationResponse createBackupConfigurationResponse(
+      BackupConfigurationVO configuration);
 
-    Pair<List<? extends BackupConfigurationVO>, Integer> listConfigurations(
-        BackupListConfigurationCmd cmd);
+  BackupConfigurationResponse addConfiguration(String name, String value, String description)
+      throws InvalidParameterValueException;
+
+  BackupConfigurationResponse deleteConfiguration(BackupDeleteConfigurationCmd cmd)
+      throws InvalidParameterValueException;
+
+  Pair<List<? extends BackupConfigurationVO>, Integer> listConfigurations(
+      BackupListConfigurationCmd cmd);
 
 }

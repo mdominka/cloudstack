@@ -239,7 +239,7 @@
                 type: 'select',
                 title: 'label.backup.configuration',
                 listView: {
-                    id: 'ldap',
+                    id: 'backup',
                     label: 'label.backup.configuration',
                     fields: {
                         name: {
@@ -311,7 +311,7 @@
                                     var items = [];
                                     console.log(args);
                                     $.ajax({
-                                        url: createURL("listBackupConfigurations&name=" + args.context.ldapConfiguration[0].name),
+                                        url: createURL("listBackupConfigurations&name=" + args.context.backupConfiguration[0].name),
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {
