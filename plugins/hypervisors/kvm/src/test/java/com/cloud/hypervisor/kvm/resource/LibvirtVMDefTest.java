@@ -58,7 +58,7 @@ public class LibvirtVMDefTest extends TestCase {
     @Test
     public void testInterfaceEthernet() {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
-        ifDef.defEthernet("targetDeviceName", "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, "/bin/if_up",100,1500);
+        ifDef.defEthernet("targetDeviceName", "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, "/bin/if_up",0,1500);
 
         String expected =
             "<interface type='ethernet'>\n"
@@ -76,7 +76,7 @@ public class LibvirtVMDefTest extends TestCase {
     @Test
     public void testInterfaceDirectNet() {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
-        ifDef.defDirectNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, "private", 100, 1500);
+        ifDef.defDirectNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, "private", 0, 1500);
 
         String expected =
             "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.DIRECT + "'>\n"
