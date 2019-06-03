@@ -58,7 +58,7 @@ public class LibvirtVMDefTest extends TestCase {
     @Test
     public void testInterfaceEthernet() {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
-        ifDef.defEthernet("targetDeviceName", "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, "/bin/if_up",100,0);
+        ifDef.defEthernet("targetDeviceName", "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, "/bin/if_up",100,1500);
 
         String expected =
             "<interface type='ethernet'>\n"
@@ -83,7 +83,7 @@ public class LibvirtVMDefTest extends TestCase {
                     + "<mtu size='1500'/>\n"
                     + "<mac address='00:11:22:aa:bb:dd'/>\n"
                     + "<model type='virtio'/>\n"
-                    + "</script path='/bin/if_up]'>\n"
+                    + "<link state='up'/>\n"
                     + "</interface>\n";
 
         assertEquals(expected, ifDef.toString());
