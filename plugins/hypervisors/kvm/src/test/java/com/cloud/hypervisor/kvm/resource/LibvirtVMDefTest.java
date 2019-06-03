@@ -75,7 +75,7 @@ public class LibvirtVMDefTest extends TestCase {
     @Test
     public void testInterfaceDirectNet() {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
-        ifDef.defDirectNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, "private", 100, 0);
+        ifDef.defDirectNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, "private", 100, 1500);
 
         String expected =
             "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.DIRECT + "'>\n"
@@ -83,7 +83,7 @@ public class LibvirtVMDefTest extends TestCase {
                     + "<mtu size='1500'/>\n"
                     + "<mac address='00:11:22:aa:bb:dd'/>\n"
                     + "<model type='virtio'/>\n"
-                    + "<link state='up'/>\n"
+                    + "</script path='/bin/if_up]'>\n"
                     + "</interface>\n";
 
         assertEquals(expected, ifDef.toString());
