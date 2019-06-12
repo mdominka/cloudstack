@@ -160,3 +160,16 @@ ALTER VIEW `cloud`.`service_offering_view` AS
 
 -- PR#2578 New column for listManagementServers API call
 ALTER TABLE `mshost` ADD COLUMN `uuid` varchar(40) AFTER `name`;
+
+
+CREATE TABLE `cloud`.`backup_configuration` (
+  `name` varchar(255) NOT NULL,
+  `value` varchar(255) NOT NULL,
+  `description` varchar(1024) NOT NULL,
+  PRIMARY KEY  (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT IGNORE INTO `cloud`.`backup_configuration` VALUES ('s3.name', null, 'S3 Name');
+INSERT IGNORE INTO `cloud`.`backup_configuration` VALUES ('s3.access.key', null, 'S3 Access Key');
+INSERT IGNORE INTO `cloud`.`backup_configuration` VALUES ('s3.secret.key', null, 'S3 Secret Key');
+INSERT IGNORE INTO `cloud`.`backup_configuration` VALUES ('s3.bucket', null, 'S3 Bucket');

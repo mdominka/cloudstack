@@ -235,6 +235,153 @@
                     }
                 }
             },
+            backupConfiguration: {
+                type: 'select',
+                title: 'label.backup.configuration',
+                listView: {
+                    id: 'backup',
+                    label: 'label.backup.configuration',
+                    fields: {
+                        name: {
+                            label: 'label.backup.name'
+                        },
+                        value: {
+                            label: 'label.backup.value'
+                        },
+                        description: {
+                            label: 'label.backup.description'
+                        }
+                    },
+                    dataProvider: function(args) {
+                        var data = {};
+                        listViewDataProvider(args, data);
+                        $.ajax({
+                            url: createURL('listBackupConfigurations'),
+                            data: data,
+                            success: function(json) {
+                                var items = json.backupconfigurationresponse.BackupConfiguration;
+                                args.response.success({
+                                    data: items
+                                });
+                            },
+                            error: function(data) {
+                                args.response.error(parseXMLHttpResponse(data));
+                            }
+                        });
+                    },
+                    detailView: {
+                        name: 'label.details',
+                        actions: {
+                            remove: {
+                                label: 'label.remove.backup',
+                                messages: {
+                                    notification: function(args) {
+                                        return 'label.remove.backup';
+                                    },
+                                    confirm: function() {
+                                        return 'message.remove.backup';
+                                    }
+                                },
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("deleteBackupConfiguration&name=" + args.context.backupConfiguration[0].name),
+                                        success: function(json) {
+                                            args.response.success();
+                                        }
+                                    });
+                                    $(window).trigger('cloudStack.fullRefresh');
+                                }
+                            }
+                        },
+                        tabs: {
+                            details: {
+                                title: 'label.backup.configuration',
+                                fields: [{
+                                    hostname: {
+                                        label: 'label.backup.name'
+                                    },
+                                    value: {
+                                        label: 'label.backup.value'
+                                    },
+                                    description: {
+                                        label: 'label.backup.description'
+                                    }
+                                }],
+                                dataProvider: function(args) {
+                                    var items = [];
+                                    console.log(args);
+                                    $.ajax({
+                                        url: createURL("listBackupConfigurations&name=" + args.context.backupConfiguration[0].name),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var item = json.backupconfigurationresponse.BackupConfiguration;
+                                            args.response.success({
+                                                data: item[0]
+                                            });
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    },
+                    actions: {
+                        add: {
+                            label: 'label.configure.backup',
+                            messages: {
+                                confirm: function(args) {
+                                    return 'message.configure.backup';
+                                },
+                                notification: function(args) {
+                                    return 'label.configure.backup';
+                                }
+                            },
+                            createForm: {
+                                title: 'label.configure.backup',
+                                fields: {
+                                    name: {
+                                        label: 'label.backup.name',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+                                    value: {
+                                        label: 'label.backup.value',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+                                    description: {
+                                        label: 'label.backup.description'
+                                    }
+                                }
+                            },
+                            action: function(args) {
+                                var array = [];
+                                array.push("&name=" + encodeURIComponent(args.data.name));
+                                array.push("&value=" + encodeURIComponent(args.data.value));
+                                if (args.data.description) {
+                                    array.push("&description=" + encodeURIComponent(args.data.description));
+                                }
+                                $.ajax({
+                                    url: createURL("addBackupConfiguration" + array.join("")),
+                                    dataType: "json",
+                                    async: true,
+                                    success: function(json) {
+                                        var items = json.backupconfigurationresponse.BackupAddConfiguration;
+                                        args.response.success({
+                                            data: items
+                                        });
+                                    },
+                                    error: function(json) {
+                                        args.response.error(parseXMLHttpResponse(json));
+                                    }
+                                });
+                            }
+                        }
+                    }
+                }
+            },
             baremetalRct: {
                 type: 'select',
                 title: 'label.baremetal.rack.configuration',

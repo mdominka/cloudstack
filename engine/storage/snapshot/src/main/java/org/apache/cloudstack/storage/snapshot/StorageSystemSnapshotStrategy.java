@@ -137,7 +137,8 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             throw new CloudRuntimeException(msg);
         }
 
-        boolean computeClusterSupportsResign = clusterDao.getSupportsResigning(host.getClusterId());
+        boolean computeClusterSupportsResign =
+            snapshotInfo.getHypervisorType() == HypervisorType.KVM || clusterDao.getSupportsResigning(host.getClusterId());
 
         if (!computeClusterSupportsResign) {
             String msg = "Cannot archive snapshot: 'computeClusterSupportsResign' was false.";
@@ -273,10 +274,6 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
     private void verifyLocationType(SnapshotInfo snapshotInfo) {
         VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
-
-        if (snapshotInfo.getLocationType() == Snapshot.LocationType.SECONDARY && volumeInfo.getFormat() != ImageFormat.VHD) {
-            throw new CloudRuntimeException("Only the '" + ImageFormat.VHD + "' image type can be used when 'LocationType' is set to 'SECONDARY'.");
-        }
     }
 
     private boolean getHypervisorRequiresResignature(VolumeInfo volumeInfo) {

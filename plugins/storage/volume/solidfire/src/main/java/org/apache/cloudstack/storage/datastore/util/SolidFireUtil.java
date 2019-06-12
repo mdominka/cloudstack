@@ -16,24 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.util;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.UUID;
-
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import static org.apache.commons.lang.ArrayUtils.toPrimitive;
 
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -44,10 +27,8 @@ import com.cloud.user.AccountDetailVO;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
-
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Longs;
-
 import com.solidfire.client.ElementFactory;
 import com.solidfire.element.api.Account;
 import com.solidfire.element.api.AddAccountRequest;
@@ -73,11 +54,28 @@ import com.solidfire.element.api.RemoveVolumesFromVolumeAccessGroupRequest;
 import com.solidfire.element.api.RollbackToSnapshotRequest;
 import com.solidfire.element.api.Snapshot;
 import com.solidfire.element.api.SolidFireElement;
+import com.solidfire.element.api.StartBulkVolumeReadRequest;
+import com.solidfire.element.api.StartBulkVolumeWriteRequest;
 import com.solidfire.element.api.Volume;
 import com.solidfire.element.api.VolumeAccessGroup;
 import com.solidfire.jsvcgen.javautil.Optional;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.log4j.Logger;
 
-import static org.apache.commons.lang.ArrayUtils.toPrimitive;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.UUID;
 
 public class SolidFireUtil {
     private static final Logger LOGGER = Logger.getLogger(SolidFireUtil.class);
@@ -146,6 +144,11 @@ public class SolidFireUtil {
 
     private static final int MAX_NUM_VAGS_PER_VOLUME = 4;
     private static final int MAX_NUM_INITIATORS_PER_VAG = 64;
+
+    private static final String S3_PREFIX = "hci-cl01-nhjj/";
+    private static final String S3_ENDPOINT = "s3";
+    private static final String S3_FORMAT = "native";
+
 
     public static class SolidFireConnection {
         private final String _managementVip;
@@ -996,6 +999,61 @@ public class SolidFireUtil {
                 .build();
 
         return getSolidFireElement(sfConnection).createSnapshot(request).getSnapshotID();
+    }
+
+    private static Map<String, Object> buildScriptParameters(final long volumeId, final String volumeName,
+        final Map<String, String> parameters, Boolean hasWriteParameters) {
+        Map<String, Integer> rangeParameters = new HashMap<>();
+        rangeParameters.put("lba", 0);
+        rangeParameters.put("blocks", 262144);
+
+        parameters.put("prefix", S3_PREFIX + volumeName + "-" + volumeId);
+        parameters.put("endpoint", S3_ENDPOINT);
+        parameters.put("format", S3_FORMAT);
+
+        Map<String, Object> scriptParameters = new HashMap<>();
+        scriptParameters.put("range", rangeParameters);
+        scriptParameters.put(hasWriteParameters ? "write" : "read", parameters);
+
+        return scriptParameters;
+    }
+
+    public static void startBulkVolumeRead(SolidFireConnection sfConnection, long volumeId,
+        String volumeName, final Map<String, String> parameters) {
+
+        ListSnapshotsRequest snapshotRequest = ListSnapshotsRequest.builder()
+            .optionalVolumeID(volumeId)
+            .build();
+
+        Snapshot[] snapshots = getSolidFireElement(sfConnection).listSnapshots(snapshotRequest).getSnapshots();
+        Long latestSnapshotId = snapshots[snapshots.length - 1].getSnapshotID();
+
+        final Map<String, Object> scriptParameters = buildScriptParameters(volumeId, volumeName, parameters, false);
+
+        StartBulkVolumeReadRequest request = StartBulkVolumeReadRequest.builder()
+            .format(S3_FORMAT)
+            .volumeID(volumeId)
+            .optionalSnapshotID(latestSnapshotId)
+            .optionalScript("bv_internal.py")
+            .optionalScriptParameters(scriptParameters)
+            .build();
+
+        getSolidFireElement(sfConnection).startBulkVolumeRead(request);
+    }
+
+    public static void startBulkVolumeWrite(SolidFireConnection sfConnection, long volumeId,
+        String volumeName, final Map<String, String> parameters) {
+
+        final Map<String, Object> scriptParameters = buildScriptParameters(volumeId, volumeName, parameters, true);
+
+        StartBulkVolumeWriteRequest request = StartBulkVolumeWriteRequest.builder()
+            .format(S3_FORMAT)
+            .volumeID(volumeId)
+            .optionalScript("bv_internal.py")
+            .optionalScriptParameters(scriptParameters)
+            .build();
+
+        getSolidFireElement(sfConnection).startBulkVolumeWrite(request);
     }
 
     public static SolidFireSnapshot getSnapshot(SolidFireConnection sfConnection, long volumeId, long snapshotId) {

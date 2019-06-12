@@ -147,13 +147,18 @@ public class DateUtil {
 
         String[] scheduleParts = schedule.split(":"); //MM:HH:DAY
 
-        final Calendar scheduleTime = Calendar.getInstance();
-        scheduleTime.setTimeZone(TimeZone.getTimeZone(timezone));
+        final Calendar scheduleTime = Calendar.getInstance(TimeZone.getTimeZone(timezone));
+        TimeZone tz = scheduleTime.getTimeZone();
 
         if (startDate == null) {
             startDate = new Date();
         }
         scheduleTime.setTime(startDate);
+
+        long msFromEpochGmt = startDate.getTime();
+        int offsetFromUTC = tz.getOffset(msFromEpochGmt);
+        scheduleTime.add(Calendar.MILLISECOND, offsetFromUTC);
+
         // Throw an ArrayIndexOutOfBoundsException if schedule is badly formatted.
         scheduleTime.setLenient(false);
         int minutes = 0;
