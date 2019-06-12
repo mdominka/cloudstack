@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.management.ManagementServerHost;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
@@ -35,6 +36,7 @@ import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
+import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConditionResponse;
@@ -442,6 +444,8 @@ public interface ResponseGenerator {
     TrafficMonitorResponse createTrafficMonitorResponse(Host trafficMonitor);
 
     VMSnapshotResponse createVMSnapshotResponse(VMSnapshot vmSnapshot);
+
+    BackupResponse createBackupResponse(S3ObjectSummary s3ObjectSummary);
 
     NicSecondaryIpResponse createSecondaryIPToNicResponse(NicSecondaryIp result);
 

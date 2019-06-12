@@ -2497,7 +2497,40 @@
                     }
                     //detailview end
                 }
-            }
+            },
+            /**
+             * Backup Snapshots
+             */
+              backupsnapshots: {
+                type: 'select',
+                title: 'label.backupsnapshot',
+                listView: {
+                  id: 'backupsnapshots',
+                  isMaximized: true,
+                  fields: {
+                    name: {
+                      label: 'label.name'
+                    }
+                  },
+                  dataProvider: function(args) {
+                    var data = {};
+                    listViewDataProvider(args, data);
+                    $.ajax({
+                      url: createURL('listBackups'),
+                      data: data,
+                      dataType: "json",
+                      async: true,
+                      success: function(json) {
+                        var jsonObj;
+                        jsonObj = json.listbackupsresponse.backup;
+                        args.response.success({
+                          data: jsonObj
+                        });
+                      }
+                    });
+                  }
+                }
+              }
         }
     };
 
