@@ -19,7 +19,6 @@ package com.cloud.vm.snapshot;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
-import org.apache.cloudstack.api.BackupAddConfigurationCmd;
 import org.apache.cloudstack.api.BackupConfigurationResponse;
 import org.apache.cloudstack.api.BackupDeleteConfigurationCmd;
 import org.apache.cloudstack.api.BackupListConfigurationCmd;

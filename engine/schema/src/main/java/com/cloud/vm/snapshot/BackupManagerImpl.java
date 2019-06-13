@@ -16,9 +16,11 @@
 // under the License.
 package com.cloud.vm.snapshot;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
 import com.cloud.vm.snapshot.dao.BackupConfigurationDao;
 import org.apache.cloudstack.api.BackupConfigurationResponse;
+import org.apache.cloudstack.api.BackupDeleteConfigurationCmd;
 import org.apache.cloudstack.api.BackupListConfigurationCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -52,6 +54,18 @@ public class BackupManagerImpl implements BackupManager {
     @Override
     public BackupConfigurationResponse createBackupConfigurationResponse(final BackupConfigurationVO configuration) {
         return new BackupConfigurationResponse(configuration.getName(), configuration.getValue(), configuration.getDescription());
+    }
+
+    @Override
+    public BackupConfigurationResponse addConfiguration(final String name, final String value,
+        final String description) throws InvalidParameterValueException {
+        return null;
+    }
+
+    @Override
+    public BackupConfigurationResponse deleteConfiguration(final BackupDeleteConfigurationCmd cmd)
+        throws InvalidParameterValueException {
+        return null;
     }
 
     @Override
