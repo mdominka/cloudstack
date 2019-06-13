@@ -191,8 +191,8 @@ known_categories = {
     'cloudian': 'Cloudian',
     'Sioc' : 'Sioc',
     'Diagnostics': 'Diagnostics',
-    'listBackups': 'Backup'
-    'Management': 'Management',
+    'listBackups': 'Backup',
+    'Management': 'Management'
     }
 
 
