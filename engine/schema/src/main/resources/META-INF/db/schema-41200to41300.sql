@@ -174,3 +174,33 @@ CREATE VIEW `cloud`.`user_vm_view` AS
    `affinity_group`.`description` AS `affinity_group_description`,
    `vm_instance`.`dynamically_scalable` AS `dynamically_scalable`
 FROM ((((((((((((((((((((((((((((((((`user_vm` join `vm_instance` on(`vm_instance`.`id` = `user_vm`.`id` and `vm_instance`.`removed` is null)) join `account` on(`vm_instance`.`account_id` = `account`.`id`)) join `domain` on(`vm_instance`.`domain_id` = `domain`.`id`)) left join `guest_os` on(`vm_instance`.`guest_os_id` = `guest_os`.`id`)) left join `host_pod_ref` on(`vm_instance`.`pod_id` = `host_pod_ref`.`id`)) left join `projects` on(`projects`.`project_account_id` = `account`.`id`)) left join `instance_group_vm_map` on(`vm_instance`.`id` = `instance_group_vm_map`.`instance_id`)) left join `instance_group` on(`instance_group_vm_map`.`group_id` = `instance_group`.`id`)) left join `data_center` on(`vm_instance`.`data_center_id` = `data_center`.`id`)) left join `host` on(`vm_instance`.`host_id` = `host`.`id`)) left join `vm_template` on(`vm_instance`.`vm_template_id` = `vm_template`.`id`)) left join `vm_template` `iso` on(`iso`.`id` = `user_vm`.`iso_id`)) left join `service_offering` on(`vm_instance`.`service_offering_id` = `service_offering`.`id`)) left join `disk_offering` `svc_disk_offering` on(`vm_instance`.`service_offering_id` = `svc_disk_offering`.`id`)) left join `disk_offering` on(`vm_instance`.`disk_offering_id` = `disk_offering`.`id`)) left join `volumes` on(`vm_instance`.`id` = `volumes`.`instance_id`)) left join `storage_pool` on(`volumes`.`pool_id` = `storage_pool`.`id`)) left join `security_group_vm_map` on(`vm_instance`.`id` = `security_group_vm_map`.`instance_id`)) left join `security_group` on(`security_group_vm_map`.`security_group_id` = `security_group`.`id`)) left join `nics` on(`vm_instance`.`id` = `nics`.`instance_id` and `nics`.`removed` is null)) left join `networks` on(`nics`.`network_id` = `networks`.`id`)) left join `vpc` on(`networks`.`vpc_id` = `vpc`.`id` and `vpc`.`removed` is null)) left join `user_ip_address` on(`user_ip_address`.`vm_id` = `vm_instance`.`id`)) left join `user_vm_details` `ssh_details` on(`ssh_details`.`vm_id` = `vm_instance`.`id` and `ssh_details`.`name` = 'SSH.PublicKey')) left join `ssh_keypairs` on(`ssh_keypairs`.`public_key` = `ssh_details`.`value` and `ssh_keypairs`.`account_id` = `account`.`id`)) left join `resource_tags` on(`resource_tags`.`resource_id` = `vm_instance`.`id` and `resource_tags`.`resource_type` = 'UserVm')) left join `async_job` on(`async_job`.`instance_id` = `vm_instance`.`id` and `async_job`.`instance_type` = 'VirtualMachine' and `async_job`.`job_status` = 0)) left join `affinity_group_vm_map` on(`vm_instance`.`id` = `affinity_group_vm_map`.`instance_id`)) left join `affinity_group` on(`affinity_group_vm_map`.`affinity_group_id` = `affinity_group`.`id`)) left join `user_vm_details` `custom_cpu` on(`custom_cpu`.`vm_id` = `vm_instance`.`id` and `custom_cpu`.`name` = 'CpuNumber')) left join `user_vm_details` `custom_speed` on(`custom_speed`.`vm_id` = `vm_instance`.`id` and `custom_speed`.`name` = 'CpuSpeed')) left join `user_vm_details` `custom_ram_size` on(`custom_ram_size`.`vm_id` = `vm_instance`.`id` and `custom_ram_size`.`name` = 'memory'));
+
+-- Remove key/value tags from project_view
+DROP VIEW IF EXISTS `cloud`.`project_view`;
+CREATE VIEW `cloud`.`project_view` AS
+    select
+        projects.id,
+        projects.uuid,
+        projects.name,
+        projects.display_text,
+        projects.state,
+        projects.removed,
+        projects.created,
+        projects.project_account_id,
+        account.account_name owner,
+        pacct.account_id,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path
+    from
+        `cloud`.`projects`
+            inner join
+        `cloud`.`domain` ON projects.domain_id = domain.id
+            inner join
+        `cloud`.`project_account` ON projects.id = project_account.project_id
+            and project_account.account_role = 'Admin'
+            inner join
+        `cloud`.`account` ON account.id = project_account.account_id
+            left join
+        `cloud`.`project_account` pacct ON projects.id = pacct.project_id;
