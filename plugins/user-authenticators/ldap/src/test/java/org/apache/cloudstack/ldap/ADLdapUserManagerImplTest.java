@@ -16,6 +16,10 @@
 // under the License.
 package org.apache.cloudstack.ldap;
 
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,10 +28,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import javax.naming.directory.SearchControls;
 import javax.naming.ldap.LdapContext;
-
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ADLdapUserManagerImplTest {
