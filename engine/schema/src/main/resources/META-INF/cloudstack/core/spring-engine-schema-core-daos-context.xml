@@ -283,4 +283,6 @@
   <bean id="GuestOsDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.GuestOsDetailsDaoImpl" />
   <bean id="annotationDaoImpl" class="org.apache.cloudstack.annotation.dao.AnnotationDaoImpl" />
   <bean id="backupManagerImpl" class="com.cloud.vm.snapshot.BackupManagerImpl" />
+  <bean id="backupConfigurationDaoImpl" class="com.cloud.vm.snapshot.dao.BackupConfigurationDaoImpl" />
+  <bean id="backupConfiguration" class="com.cloud.vm.snapshot.BackupConfiguration" />
 </beans>
