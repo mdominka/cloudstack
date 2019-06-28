@@ -38,7 +38,7 @@ public class BackupAddConfigurationCmd extends BaseCmd {
     @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, required = true, description = "Value")
     private String value;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = false, description = "Description")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = true, description = "Description")
     private String description;
 
     public BackupAddConfigurationCmd() {
@@ -60,7 +60,6 @@ public class BackupAddConfigurationCmd extends BaseCmd {
         } catch (final InvalidParameterValueException e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
         }
-
     }
 
     @Override

@@ -44,7 +44,7 @@ public class BackupListConfigurationCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, description = "Value")
     private String value;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = false, description = "Description")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Description")
     private String description;
 
     public BackupListConfigurationCmd() {

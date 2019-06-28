@@ -352,7 +352,10 @@
                                         }
                                     },
                                     description: {
-                                        label: 'label.backup.description'
+                                        label: 'label.backup.description',
+                                        validation: {
+                                            required: true
+                                        }
                                     }
                                 }
                             },
@@ -360,9 +363,7 @@
                                 var array = [];
                                 array.push("&name=" + encodeURIComponent(args.data.name));
                                 array.push("&value=" + encodeURIComponent(args.data.value));
-                                if (args.data.description) {
-                                    array.push("&description=" + encodeURIComponent(args.data.description));
-                                }
+                                array.push("&description=" + encodeURIComponent(args.data.description));
                                 $.ajax({
                                     url: createURL("addBackupConfiguration" + array.join("")),
                                     dataType: "json",

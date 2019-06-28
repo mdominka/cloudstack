@@ -46,11 +46,23 @@ public class BackupConfigurationVO {
         return name;
     }
 
+    public void setName(final String name) {
+        this.name = name;
+    }
+
     public String getValue() {
         return value;
     }
 
+    public void setValue(final String value) {
+        this.value = value;
+    }
+
     public String getDescription() {
         return description;
+    }
+
+    public void setDescription(final String description) {
+        this.description = description;
     }
 }

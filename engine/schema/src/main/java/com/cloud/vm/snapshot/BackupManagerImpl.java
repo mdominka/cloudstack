@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.vm.snapshot;
 
+import static java.util.Objects.nonNull;
+
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
 import com.cloud.vm.snapshot.dao.BackupConfigurationDao;
@@ -59,7 +61,17 @@ public class BackupManagerImpl implements BackupManager {
     @Override
     public BackupConfigurationResponse addConfiguration(final String name, final String value,
         final String description) throws InvalidParameterValueException {
-        return null;
+
+        final BackupConfigurationVO configuration =
+            _backupConfigurationDao.find(name, value, description);
+
+        if (nonNull(configuration)){
+            throw new InvalidParameterValueException("Duplicate configuration");
+        }
+        final BackupConfigurationVO entity = new BackupConfigurationVO(name, value, description);
+        _backupConfigurationDao.persist(entity);
+
+        return createBackupConfigurationResponse(entity);
     }
 
     @Override
