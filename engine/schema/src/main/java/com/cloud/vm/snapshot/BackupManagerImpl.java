@@ -21,6 +21,7 @@ import static java.util.Objects.nonNull;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
 import com.cloud.vm.snapshot.dao.BackupConfigurationDao;
+import org.apache.cloudstack.api.BackupAddConfigurationCmd;
 import org.apache.cloudstack.api.BackupConfigurationResponse;
 import org.apache.cloudstack.api.BackupDeleteConfigurationCmd;
 import org.apache.cloudstack.api.BackupListConfigurationCmd;
@@ -93,6 +94,7 @@ public class BackupManagerImpl implements BackupManager {
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(BackupListConfigurationCmd.class);
+        cmdList.add(BackupAddConfigurationCmd.class);
         return cmdList;
     }
 }
