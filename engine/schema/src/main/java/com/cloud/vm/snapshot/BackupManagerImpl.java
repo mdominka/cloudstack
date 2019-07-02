@@ -20,6 +20,7 @@ import static java.util.Objects.nonNull;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.snapshot.dao.BackupConfigurationDao;
 import org.apache.cloudstack.api.BackupAddConfigurationCmd;
 import org.apache.cloudstack.api.BackupConfigurationResponse;
@@ -78,7 +79,19 @@ public class BackupManagerImpl implements BackupManager {
     @Override
     public BackupConfigurationResponse deleteConfiguration(final BackupDeleteConfigurationCmd cmd)
         throws InvalidParameterValueException {
-        return null;
+
+        final String name = cmd.getName();
+        final String value = cmd.getValue();
+        final String description = cmd.getDescription();
+
+        final SearchCriteria<BackupConfigurationVO> sc = _backupConfigurationDao.createSearchCriteria();
+        sc.setParameters("name", name);
+        sc.setParameters("value", value);
+
+        _backupConfigurationDao.remove(sc);
+
+        final BackupConfigurationVO entity = new BackupConfigurationVO(name, value, description);
+        return createBackupConfigurationResponse(entity);
     }
 
     @Override
@@ -95,6 +108,7 @@ public class BackupManagerImpl implements BackupManager {
         final List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(BackupListConfigurationCmd.class);
         cmdList.add(BackupAddConfigurationCmd.class);
+        cmdList.add(BackupDeleteConfigurationCmd.class);
         return cmdList;
     }
 }
