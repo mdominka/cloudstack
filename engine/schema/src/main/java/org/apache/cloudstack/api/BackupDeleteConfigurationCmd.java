@@ -32,13 +32,13 @@ public class BackupDeleteConfigurationCmd extends BaseCmd {
     @Inject
     private BackupManager _backupManager;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Name")
     private String name;
 
-    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, required = true, description = "Value")
+    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, description = "Value")
     private String value;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = false, description = "Description")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Description")
     private String description;
 
     public BackupDeleteConfigurationCmd() {
