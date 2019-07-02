@@ -283,8 +283,14 @@
                                     }
                                 },
                                 action: function(args) {
+                                    var data = {
+                                      name: args.context.backupConfiguration[0].name,
+                                      value: args.context.backupConfiguration[0].value,
+                                      description: args.context.backupConfiguration[0].description
+                                    };
                                     $.ajax({
-                                        url: createURL("deleteBackupConfiguration&name=" + args.context.backupConfiguration[0].name),
+                                        url: createURL("deleteBackupConfiguration"),
+                                        data: data,
                                         success: function(json) {
                                             args.response.success();
                                         }
