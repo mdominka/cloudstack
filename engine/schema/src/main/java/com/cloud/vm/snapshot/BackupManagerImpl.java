@@ -16,10 +16,12 @@
 // under the License.
 package com.cloud.vm.snapshot;
 
+import static com.cloud.utils.db.SearchCriteria.*;
 import static java.util.Objects.nonNull;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.snapshot.dao.BackupConfigurationDao;
 import org.apache.cloudstack.api.BackupAddConfigurationCmd;
@@ -84,9 +86,16 @@ public class BackupManagerImpl implements BackupManager {
         final String value = cmd.getValue();
         final String description = cmd.getDescription();
 
-        final SearchCriteria<BackupConfigurationVO> sc = _backupConfigurationDao.createSearchCriteria();
+        final SearchBuilder<BackupConfigurationVO> sb = _backupConfigurationDao.createSearchBuilder();
+        sb.and("name", sb.entity().getName(), Op.EQ);
+        sb.and("value", sb.entity().getValue(), Op.EQ);
+        sb.and("description", sb.entity().getDescription(), Op.EQ);
+        sb.done();
+
+        final SearchCriteria<BackupConfigurationVO> sc = sb.create();
         sc.setParameters("name", name);
         sc.setParameters("value", value);
+        sc.setParameters("description", description);
 
         _backupConfigurationDao.remove(sc);
 
