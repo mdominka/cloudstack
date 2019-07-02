@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.vm.snapshot;
 
-import static com.cloud.utils.db.SearchCriteria.*;
+import static com.cloud.utils.db.SearchCriteria.Op.EQ;
 import static java.util.Objects.nonNull;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -87,9 +87,9 @@ public class BackupManagerImpl implements BackupManager {
         final String description = cmd.getDescription();
 
         final SearchBuilder<BackupConfigurationVO> sb = _backupConfigurationDao.createSearchBuilder();
-        sb.and("name", sb.entity().getName(), Op.EQ);
-        sb.and("value", sb.entity().getValue(), Op.EQ);
-        sb.and("description", sb.entity().getDescription(), Op.EQ);
+        sb.and("name", sb.entity().getName(), EQ);
+        sb.and("value", sb.entity().getValue(), EQ);
+        sb.and("description", sb.entity().getDescription(), EQ);
         sb.done();
 
         final SearchCriteria<BackupConfigurationVO> sc = sb.create();
