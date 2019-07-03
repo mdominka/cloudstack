@@ -2184,6 +2184,7 @@ var dictionary = {
     "message.recover.vm": "Bitte bestätigen Sie, dass Sie diese VM wiederherstellen möchten.",
     "message.redirecting.region": "Weiterleitung zu Region...",
     "message.reinstall.vm": "Hinweis: Mit Vorsicht verwenden. Dies wird dazu führen, dass die VM von der Vorlage neu installiert wird; Daten auf der Root-Ferstplatte werden dadruch gelöscht. Extra Daten-Volumen, falls vorhanden, bleiben jedoch unberührt.",
+    "message.remove.backup": "Sind Sie sicher, dass Sie die Backup-Konfiguration löschen möchten?",
     "message.remove.ldap": "Sind Sie sicher, dass Sie die LDAP-Konfiguration löschen möchten?",
     "message.remove.region": "Sind Sie sicher, dass Sie diese Region vom Verwaltungsserver entfernen möchten?",
     "message.remove.vpc": "Bitte bestätigen Sie, dass Sie das VPC löschen möchten",

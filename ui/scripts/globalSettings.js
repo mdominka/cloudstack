@@ -303,7 +303,7 @@
                             details: {
                                 title: 'label.backup.configuration',
                                 fields: [{
-                                    hostname: {
+                                    name: {
                                         label: 'label.backup.name'
                                     },
                                     value: {

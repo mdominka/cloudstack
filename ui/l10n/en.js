@@ -2266,6 +2266,7 @@ var dictionary = {
 "message.register.failed":"Registration Failed",
 "message.register.succeeded":"Registration Succeeded",
 "message.reinstall.vm":"NOTE: Proceed with caution. This will cause the VM to be reinstalled from the template; data on the root disk will be lost. Extra data volumes, if any, will not be touched.",
+"message.remove.backup":"Are you sure you want to delete the Backup configuration?",
 "message.remove.ldap":"Are you sure you want to delete the LDAP configuration?",
 "message.remove.region":"Are you sure you want to remove this region from this management server?",
 "message.remove.vpc":"Please confirm that you want to remove the VPC",
