@@ -17,7 +17,6 @@
 package com.cloud.vm.snapshot;
 
 import static com.cloud.utils.db.SearchCriteria.Op.EQ;
-import static java.util.Objects.nonNull;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
@@ -47,34 +46,34 @@ public class BackupManagerImpl implements BackupManager {
     private BackupConfiguration _backupConfiguration;
 
     public BackupManagerImpl() {
-        super();
     }
 
     public BackupManagerImpl(final BackupConfigurationDao backupConfigurationDao,
                            final BackupConfiguration backupConfiguration) {
-        super();
         _backupConfigurationDao = backupConfigurationDao;
         _backupConfiguration = backupConfiguration;
     }
 
     @Override
     public BackupConfigurationResponse createBackupConfigurationResponse(final BackupConfigurationVO configuration) {
-        return new BackupConfigurationResponse(configuration.getName(), configuration.getValue(), configuration.getDescription());
+        return new BackupConfigurationResponse(configuration.getBucket(),
+            configuration.getEndpoint(), configuration.getAccessKey(),
+            configuration.getSecretKey(), configuration.getDescription());
     }
 
     @Override
-    public BackupConfigurationResponse addConfiguration(final String name, final String value,
-        final String description) throws InvalidParameterValueException {
+    public BackupConfigurationResponse addConfiguration(final String bucket, final String endpoint,
+        final String accessKey, final String secretKey, final String description)
+        throws InvalidParameterValueException {
 
-        final BackupConfigurationVO configuration =
-            _backupConfigurationDao.find(name, value, description);
+        final BackupConfigurationVO entity = new BackupConfigurationVO(bucket, endpoint, accessKey,
+            secretKey, description);
 
-        if (nonNull(configuration)){
+        try {
+            _backupConfigurationDao.persist(entity);
+        } catch (final Exception e) {
             throw new InvalidParameterValueException("Duplicate configuration");
         }
-        final BackupConfigurationVO entity = new BackupConfigurationVO(name, value, description);
-        _backupConfigurationDao.persist(entity);
-
         return createBackupConfigurationResponse(entity);
     }
 
@@ -82,39 +81,41 @@ public class BackupManagerImpl implements BackupManager {
     public BackupConfigurationResponse deleteConfiguration(final BackupDeleteConfigurationCmd cmd)
         throws InvalidParameterValueException {
 
-        final String name = cmd.getName();
-        final String value = cmd.getValue();
+        final String bucket = cmd.getBucket();
+        final String endpoint = cmd.getEndpoint();
+        final String accessKey = cmd.getAccessKey();
+        final String secretKey = cmd.getSecretKey();
         final String description = cmd.getDescription();
 
         final SearchBuilder<BackupConfigurationVO> sb = _backupConfigurationDao.createSearchBuilder();
-        sb.and("name", sb.entity().getName(), EQ);
-        sb.and("value", sb.entity().getValue(), EQ);
-        sb.and("description", sb.entity().getDescription(), EQ);
+        sb.and("bucket", sb.entity().getBucket(), EQ);
+        sb.and("endpoint", sb.entity().getEndpoint(), EQ);
         sb.done();
 
         final SearchCriteria<BackupConfigurationVO> sc = sb.create();
-        sc.setParameters("name", name);
-        sc.setParameters("value", value);
-        sc.setParameters("description", description);
+        sc.setParameters("bucket", bucket);
+        sc.setParameters("endpoint", endpoint);
 
         _backupConfigurationDao.remove(sc);
 
-        final BackupConfigurationVO entity = new BackupConfigurationVO(name, value, description);
+        final BackupConfigurationVO entity = new BackupConfigurationVO(bucket, endpoint, accessKey,
+            secretKey, description);
         return createBackupConfigurationResponse(entity);
     }
 
     @Override
     public Pair<List<? extends BackupConfigurationVO>, Integer> listConfigurations(final BackupListConfigurationCmd cmd) {
-        final String name = cmd.getName();
-        final String value = cmd.getValue();
-        final String description = cmd.getDescription();
-        final Pair<List<BackupConfigurationVO>, Integer> result = _backupConfigurationDao.searchConfigurations(name, value, description);
-        return new Pair<List<? extends BackupConfigurationVO>, Integer>(result.first(), result.second());
+        final String bucket = cmd.getBucket();
+        final String endpoint = cmd.getEndpoint();
+        final String accessKey = cmd.getAccessKey();
+        final Pair<List<BackupConfigurationVO>, Integer> result =
+            _backupConfigurationDao.searchConfigurations(bucket, endpoint, accessKey);
+        return new Pair<>(result.first(), result.second());
     }
 
     @Override
     public List<Class<?>> getCommands() {
-        final List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        final List<Class<?>> cmdList = new ArrayList<>();
         cmdList.add(BackupListConfigurationCmd.class);
         cmdList.add(BackupAddConfigurationCmd.class);
         cmdList.add(BackupDeleteConfigurationCmd.class);

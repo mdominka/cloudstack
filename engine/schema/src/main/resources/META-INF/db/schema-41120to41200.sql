@@ -161,15 +161,15 @@ ALTER VIEW `cloud`.`service_offering_view` AS
 -- PR#2578 New column for listManagementServers API call
 ALTER TABLE `mshost` ADD COLUMN `uuid` varchar(40) AFTER `name`;
 
+DROP TABLE IF EXISTS `cloud`.`backup_configuration`;
 
 CREATE TABLE `cloud`.`backup_configuration` (
-  `name` varchar(255) NOT NULL,
-  `value` varchar(255) NOT NULL,
-  `description` varchar(1024) NOT NULL,
-  PRIMARY KEY  (`name`)
+  `bucket` varchar(255) NOT NULL,
+  `endpoint` varchar(255) NOT NULL,
+  `access_key` varchar(255) NOT NULL,
+  `secret_key` varchar(255) NOT NULL,
+  `description` varchar(1024),
+  PRIMARY KEY  (`bucket`, `endpoint`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT IGNORE INTO `cloud`.`backup_configuration` VALUES ('s3.name', null, 'S3 Name');
-INSERT IGNORE INTO `cloud`.`backup_configuration` VALUES ('s3.access.key', null, 'S3 Access Key');
-INSERT IGNORE INTO `cloud`.`backup_configuration` VALUES ('s3.secret.key', null, 'S3 Secret Key');
-INSERT IGNORE INTO `cloud`.`backup_configuration` VALUES ('s3.bucket', null, 'S3 Bucket');
+INSERT IGNORE INTO `cloud`.`backup_configuration` VALUES ('s3.bucket', 's3.region', 's3.access.key', 's3.secret.key', 'S3 config');

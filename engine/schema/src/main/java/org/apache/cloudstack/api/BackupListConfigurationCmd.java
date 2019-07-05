@@ -38,11 +38,17 @@ public class BackupListConfigurationCmd extends BaseListCmd {
     @Inject
     private BackupManager _backupManager;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Name")
-    private String name;
+    @Parameter(name = ApiConstants.S3_BUCKET_NAME, type = CommandType.STRING, description = "Bucket")
+    private String bucket;
 
-    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, description = "Value")
-    private String value;
+    @Parameter(name = ApiConstants.S3_END_POINT, type = CommandType.STRING, description = "Endpoint")
+    private String endpoint;
+
+    @Parameter(name = ApiConstants.S3_ACCESS_KEY, type = CommandType.STRING, description = "Accesskey")
+    private String accessKey;
+
+    @Parameter(name = ApiConstants.S3_SECRET_KEY, type = CommandType.STRING, description = "Secretkey")
+    private String secretKey;
 
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Description")
     private String description;
@@ -86,21 +92,29 @@ public class BackupListConfigurationCmd extends BaseListCmd {
         return Account.ACCOUNT_ID_SYSTEM;
     }
 
-    public String getName() {
-        return name;
+    public String getBucket() {
+        return bucket;
     }
 
-    public void setName(final String name) {
-        this.name = name;
+    public void setBucket(final String bucket) {
+        this.bucket = bucket;
     }
 
-    public String getValue() {
-        return value;
+    public String getEndpoint() {
+        return endpoint;
     }
 
-    public void setValue(final String value) {
-        this.value = value;
+    public void setEndpoint(final String endpoint) {
+        this.endpoint = endpoint;
     }
+
+    public String getAccessKey() { return accessKey; }
+
+    public void setAccessKey(final  String accessKey) { this.accessKey = accessKey;}
+
+    public String getSecretKey() { return  secretKey; }
+
+    public void setSecretKey(final String secretKey) { this.secretKey = secretKey;}
 
     public String getDescription() {
         return description;

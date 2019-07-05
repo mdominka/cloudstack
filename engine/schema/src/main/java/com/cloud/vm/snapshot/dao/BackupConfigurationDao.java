@@ -23,15 +23,11 @@ import com.cloud.vm.snapshot.BackupConfigurationVO;
 import java.util.List;
 
 public interface BackupConfigurationDao extends GenericDao<BackupConfigurationVO, Long> {
-    /**
-     * @param name
-     * @return
-     */
-    @Deprecated
-    BackupConfigurationVO findByName(String name);
 
-    BackupConfigurationVO find(String name, String value, String description);
+    BackupConfigurationVO findByName(String bucket);
 
-    Pair<List<BackupConfigurationVO>, Integer> searchConfigurations(String name, String value,
-        String description);
+    BackupConfigurationVO find(String bucket, String endpoint, String accessKey);
+
+    Pair<List<BackupConfigurationVO>, Integer> searchConfigurations(String bucket, String endpoint,
+        String accessKey);
 }

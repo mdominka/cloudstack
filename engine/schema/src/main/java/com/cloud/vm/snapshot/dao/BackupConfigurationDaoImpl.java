@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.vm.snapshot.dao;
 
+import static java.util.Objects.nonNull;
+
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -29,46 +31,64 @@ import java.util.List;
 @Component
 public class BackupConfigurationDaoImpl extends GenericDaoBase<BackupConfigurationVO, Long> implements
     BackupConfigurationDao {
-    private final SearchBuilder<BackupConfigurationVO> nameSearch;
 
     public BackupConfigurationDaoImpl() {
-        super();
-        nameSearch = createSearchBuilder();
-        nameSearch.and("name", nameSearch.entity().getName(), Op.EQ);
-        nameSearch.done();
     }
 
     @Override
-    public BackupConfigurationVO findByName(final String name) {
-        final SearchCriteria<BackupConfigurationVO> sc = nameSearch.create();
-        sc.setParameters("name", name);
+    public BackupConfigurationVO findByName(final String bucket) {
+        final SearchCriteria<BackupConfigurationVO> sc = getSearchCriteria(bucket, null, null);
         return findOneBy(sc);
     }
 
     @Override
-    public BackupConfigurationVO find(String name, String value, String description) {
-        SearchCriteria<BackupConfigurationVO> sc = getSearchCriteria(name, value, description);
+    public BackupConfigurationVO find(final String bucket, final String endpoint,
+        final String accessKey) {
+        final SearchCriteria<BackupConfigurationVO> sc = getSearchCriteria(bucket, endpoint, accessKey);
         return findOneBy(sc);
     }
 
     @Override
-    public Pair<List<BackupConfigurationVO>, Integer> searchConfigurations(String name, String value, String description) {
-        SearchCriteria<BackupConfigurationVO> sc = getSearchCriteria(name, value, description);
+    public Pair<List<BackupConfigurationVO>, Integer> searchConfigurations(final String bucket,
+        final String endpoint, final String accessKey) {
+        final SearchCriteria<BackupConfigurationVO> sc = getSearchCriteria(bucket, endpoint,
+            accessKey);
         return searchAndCount(sc, null);
     }
 
-    private SearchCriteria<BackupConfigurationVO> getSearchCriteria(String name, String value, String description) {
-        SearchCriteria<BackupConfigurationVO> sc;
-        sc = nameSearch.create();
-        if (name != null) {
-            sc.setParameters("name", name);
+    private SearchCriteria<BackupConfigurationVO> getSearchCriteria(final String bucket,
+        final String endpoint, final String accessKey) {
+
+        final SearchBuilder<BackupConfigurationVO> searchBuilder = getSearchBuilder(bucket, endpoint,
+            accessKey);
+        final SearchCriteria<BackupConfigurationVO> searchCriteria = searchBuilder.create();
+        if (nonNull(bucket)) {
+            searchCriteria.setParameters("bucket", bucket);
         }
-        if (value != null) {
-            sc.setParameters("value", value);
+        if (nonNull(endpoint)) {
+            searchCriteria.setParameters("endpoint", endpoint);
         }
-        if (description != null) {
-            sc.setParameters("description", description);
+        if (nonNull(accessKey)) {
+            searchCriteria.setParameters("access_key", accessKey);
         }
-        return sc;
+        return searchCriteria;
     }
+
+    private SearchBuilder<BackupConfigurationVO> getSearchBuilder(final String bucket,
+        final String endpoint, final String accessKey){
+
+        final SearchBuilder<BackupConfigurationVO> search = createSearchBuilder();
+        if (nonNull(bucket)){
+            search.and("bucket", search.entity().getBucket(), Op.EQ);
+        }
+        if (nonNull(endpoint)){
+            search.and("endpoint", search.entity().getEndpoint(), Op.EQ);
+        }
+        if (nonNull(accessKey)){
+            search.and("access_key", search.entity().getAccessKey(), Op.EQ);
+        }
+        search.done();
+        return search;
+    }
+
 }

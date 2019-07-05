@@ -16,19 +16,31 @@
 // under the License.
 package com.cloud.vm.snapshot;
 
+import com.cloud.utils.db.Encrypt;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
 @Table(name = "backup_configuration")
 public class BackupConfigurationVO {
 
-    @Column(name = "name")
-    private String name;
+    @Id
+    @Column(name = "bucket")
+    private String bucket;
 
-    @Column(name = "value")
-    private String value;
+    @Id
+    @Column(name = "endpoint")
+    private String endpoint;
+
+    @Column(name = "access_key")
+    private String accessKey;
+
+    @Encrypt
+    @Column(name = "secret_key")
+    private String secretKey;
 
     @Column(name = "description")
     private String description;
@@ -36,27 +48,38 @@ public class BackupConfigurationVO {
     public BackupConfigurationVO() {
     }
 
-    public BackupConfigurationVO(final String name, final String value, final String description) {
-        this.name = name;
-        this.value = value;
+    public BackupConfigurationVO(final String bucket, final String regionEndpoint,
+        final String accessKey, final String secretKey, final String description) {
+        this.bucket = bucket;
+        this.endpoint = regionEndpoint;
+        this.accessKey = accessKey;
+        this.secretKey = secretKey;
         this.description = description;
     }
 
-    public String getName() {
-        return name;
+    public String getBucket() {
+        return bucket;
     }
 
-    public void setName(final String name) {
-        this.name = name;
+    public void setBucket(final String bucket) {
+        this.bucket = bucket;
     }
 
-    public String getValue() {
-        return value;
+    public String getEndpoint() {
+        return endpoint;
     }
 
-    public void setValue(final String value) {
-        this.value = value;
+    public void setEndpoint(final String endpoint) {
+        this.endpoint = endpoint;
     }
+
+    public String getAccessKey() { return accessKey; }
+
+    public void setAccessKey(final String accessKey) { this.accessKey = accessKey; }
+
+    public String getSecretKey() { return secretKey; }
+
+    public void setSecretKey(final String secretKey) { this.secretKey = secretKey; }
 
     public String getDescription() {
         return description;

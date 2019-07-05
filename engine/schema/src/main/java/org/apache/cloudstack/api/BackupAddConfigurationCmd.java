@@ -32,28 +32,33 @@ public class BackupAddConfigurationCmd extends BaseCmd {
     @Inject
     private BackupManager _backupManager;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name")
-    private String name;
+    @Parameter(name = ApiConstants.S3_BUCKET_NAME, type = CommandType.STRING, required = true, description = "Bucket")
+    private String bucket;
 
-    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, required = true, description = "Value")
-    private String value;
+    @Parameter(name = ApiConstants.S3_END_POINT, type = CommandType.STRING, required = true, description = "Endpoint")
+    private String endpoint;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = true, description = "Description")
+    @Parameter(name = ApiConstants.S3_ACCESS_KEY, type = CommandType.STRING, required = true, description = "Accesskey")
+    private String accessKey;
+
+    @Parameter(name = ApiConstants.S3_SECRET_KEY, type = CommandType.STRING, required = true, description = "Secretkey")
+    private String secretKey;
+
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Description")
     private String description;
 
     public BackupAddConfigurationCmd() {
-        super();
     }
 
     public BackupAddConfigurationCmd(final BackupManager backupManager) {
-        super();
         _backupManager = backupManager;
     }
 
     @Override
     public void execute() throws ServerApiException {
         try {
-            final BackupConfigurationResponse response = _backupManager.addConfiguration(name, value, description);
+            final BackupConfigurationResponse response = _backupManager.addConfiguration(bucket,
+                endpoint, accessKey, secretKey, description);
             response.setObjectName("BackupAddConfiguration");
             response.setResponseName(getCommandName());
             setResponseObject(response);
@@ -72,20 +77,36 @@ public class BackupAddConfigurationCmd extends BaseCmd {
         return Account.ACCOUNT_ID_SYSTEM;
     }
 
-    public String getName() {
-        return name;
+    public String getBucket() {
+        return bucket;
     }
 
-    public void setName(final String name) {
-        this.name = name;
+    public void setBucket(final String bucket) {
+        this.bucket = bucket;
     }
 
-    public String getValue() {
-        return value;
+    public String getEndpoint() {
+        return endpoint;
     }
 
-    public void setValue(final String value) {
-        this.value = value;
+    public void setEndpoint(final String endpoint) {
+        this.endpoint = endpoint;
+    }
+
+    public String getAccessKey() {
+        return accessKey;
+    }
+
+    public void setAccessKey(final String accessKey) {
+        this.accessKey = accessKey;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    public void setSecretKey(final String secretKey) {
+        this.secretKey = secretKey;
     }
 
     public String getDescription() {

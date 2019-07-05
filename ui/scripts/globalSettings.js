@@ -242,11 +242,17 @@
                     id: 'backup',
                     label: 'label.backup.configuration',
                     fields: {
-                        name: {
-                            label: 'label.backup.name'
+                        bucket: {
+                            label: 'label.backup.bucket'
                         },
-                        value: {
-                            label: 'label.backup.value'
+                        endpoint: {
+                            label: 'label.backup.endpoint'
+                        },
+                        accesskey: {
+                            label: 'label.backup.access.key'
+                        },
+                        secretkey: {
+                            label: 'label.backup.secret.key'
                         },
                         description: {
                             label: 'label.backup.description'
@@ -284,9 +290,11 @@
                                 },
                                 action: function(args) {
                                     var data = {
-                                      name: args.context.backupConfiguration[0].name,
-                                      value: args.context.backupConfiguration[0].value,
-                                      description: args.context.backupConfiguration[0].description
+                                        bucket: args.context.backupConfiguration[0].bucket,
+                                        endpoint: args.context.backupConfiguration[0].endpoint,
+                                        accesskey: args.context.backupConfiguration[0].accesskey,
+                                        secretkey: args.context.backupConfiguration[0].secretkey,
+                                        description: args.context.backupConfiguration[0].description
                                     };
                                     $.ajax({
                                         url: createURL("deleteBackupConfiguration"),
@@ -303,11 +311,17 @@
                             details: {
                                 title: 'label.backup.configuration',
                                 fields: [{
-                                    name: {
-                                        label: 'label.backup.name'
+                                    bucket: {
+                                        label: 'label.backup.bucket'
                                     },
-                                    value: {
-                                        label: 'label.backup.value'
+                                    endpoint: {
+                                        label: 'label.backup.endpoint'
+                                    },
+                                    accesskey: {
+                                        label: 'label.backup.access.key'
+                                    },
+                                    secretkey: {
+                                        label: 'label.backup.secret.key'
                                     },
                                     description: {
                                         label: 'label.backup.description'
@@ -317,7 +331,7 @@
                                     var items = [];
                                     console.log(args);
                                     $.ajax({
-                                        url: createURL("listBackupConfigurations&name=" + args.context.backupConfiguration[0].name),
+                                        url: createURL("listBackupConfigurations&bucket=" + args.context.backupConfiguration[0].bucket),
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {
@@ -345,14 +359,26 @@
                             createForm: {
                                 title: 'label.configure.backup',
                                 fields: {
-                                    name: {
-                                        label: 'label.backup.name',
+                                    bucket: {
+                                        label: 'label.backup.bucket',
                                         validation: {
                                             required: true
                                         }
                                     },
-                                    value: {
-                                        label: 'label.backup.value',
+                                    endpoint: {
+                                        label: 'label.backup.endpoint',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+                                    accesskey: {
+                                        label: 'label.backup.access.key',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+                                    secretkey: {
+                                        label: 'label.backup.secret.key',
                                         validation: {
                                             required: true
                                         }
@@ -360,15 +386,17 @@
                                     description: {
                                         label: 'label.backup.description',
                                         validation: {
-                                            required: true
+                                            required: false
                                         }
                                     }
                                 }
                             },
                             action: function(args) {
                                 var array = [];
-                                array.push("&name=" + encodeURIComponent(args.data.name));
-                                array.push("&value=" + encodeURIComponent(args.data.value));
+                                array.push("&bucket=" + encodeURIComponent(args.data.bucket));
+                                array.push("&endpoint=" + encodeURIComponent(args.data.endpoint));
+                                array.push("&accesskey=" + encodeURIComponent(args.data.accesskey));
+                                array.push("&secretkey=" + encodeURIComponent(args.data.secretkey));
                                 array.push("&description=" + encodeURIComponent(args.data.description));
                                 $.ajax({
                                     url: createURL("addBackupConfiguration" + array.join("")),

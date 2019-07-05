@@ -22,13 +22,21 @@ import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = BackupConfiguration.class)
 public class BackupConfigurationResponse extends BaseResponse {
-    @SerializedName(ApiConstants.NAME)
-    @Param(description = "name of the backup configuration")
-    private String name;
+    @SerializedName(ApiConstants.S3_BUCKET_NAME)
+    @Param(description = "bucket name of the backup configuration")
+    private String bucket;
 
-    @SerializedName(ApiConstants.VALUE)
-    @Param(description = "value of the backup configuration")
-    private String value;
+    @SerializedName(ApiConstants.S3_END_POINT)
+    @Param(description = "endpoint of the backup configuration")
+    private String endpoint;
+
+    @SerializedName(ApiConstants.S3_ACCESS_KEY)
+    @Param(description = "access key of the backup configuration")
+    private String accessKey;
+
+    @SerializedName(ApiConstants.S3_SECRET_KEY)
+    @Param(description = "secret key of the backup configuration")
+    private String secretKey;
 
     @SerializedName(ApiConstants.DESCRIPTION)
     @Param(description = "description of the backup configuration")
@@ -38,35 +46,50 @@ public class BackupConfigurationResponse extends BaseResponse {
         super();
     }
 
-    public BackupConfigurationResponse(final String name) {
-        super();
-        setName(name);
+    public BackupConfigurationResponse(final String bucket, final String endpoint,
+        final String accessKey, final String secretKey) {
+        this(bucket, endpoint, accessKey, secretKey, null);
     }
 
-    public BackupConfigurationResponse(final String name, final String value) {
-        this(name);
-        setValue(value);
+    public BackupConfigurationResponse(final String bucket, final String endpoint,
+        final String accessKey, final String secretKey, final String description) {
+        this.bucket = bucket;
+        this.endpoint = endpoint;
+        this.accessKey = accessKey;
+        this.secretKey = secretKey;
+        this.description = description;
     }
 
-    public BackupConfigurationResponse(final String name, final String value, final String description) {
-        this(name, value);
-        setDescription(description);
+    public String getBucket() {
+        return bucket;
     }
 
-    public String getName() {
-        return name;
+    public void setBucket(final String bucket) {
+        this.bucket = bucket;
     }
 
-    public void setName(final String name) {
-        this.name = name;
+    public String getEndpoint() {
+        return endpoint;
     }
 
-    public String getValue() {
-        return value;
+    public void setEndpoint(final String endpoint) {
+        this.endpoint = endpoint;
     }
 
-    public void setValue(final String value) {
-        this.value = value;
+    public String getAccessKey() {
+        return accessKey;
+    }
+
+    public void setAccessKey(final String accessKey) {
+        this.accessKey = accessKey;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    public void setSecretKey(final String secretKey) {
+        this.secretKey = secretKey;
     }
 
     public String getDescription() {
