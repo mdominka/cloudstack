@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.vm.snapshot;
 
-import com.cloud.utils.db.Encrypt;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -38,7 +36,6 @@ public class BackupConfigurationVO {
     @Column(name = "access_key")
     private String accessKey;
 
-    @Encrypt
     @Column(name = "secret_key")
     private String secretKey;
 
