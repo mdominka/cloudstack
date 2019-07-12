@@ -30,8 +30,6 @@ public interface ProjectJoinDao extends GenericDao<ProjectJoinVO, Long> {
 
     ProjectResponse newProjectResponse(EnumSet<DomainDetails> details, ProjectJoinVO proj);
 
-    ProjectResponse setProjectResponse(ProjectResponse rsp, ProjectJoinVO proj);
-
     List<ProjectJoinVO> newProjectView(Project proj);
 
     List<ProjectJoinVO> searchByIds(Long... ids);

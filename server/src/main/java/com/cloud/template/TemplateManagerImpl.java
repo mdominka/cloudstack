@@ -39,6 +39,7 @@ import com.cloud.utils.EncryptionUtil;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.EnumUtils;
+import com.cloud.vm.VmDetailConstants;
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -1522,9 +1523,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         if (isExtractable != null) {
-            // Only Root admins allowed to change it for templates
-            if (!template.getFormat().equals(ImageFormat.ISO) && !_accountMgr.isRootAdmin(caller.getId())) {
-                throw new InvalidParameterValueException("Only ROOT admins are allowed to modify isExtractable attribute.");
+            // Only Root admins and owners are allowed to change it for templates
+            if (!template.getFormat().equals(ImageFormat.ISO) && caller.getId() != ownerId && !isAdmin) {
+                throw new InvalidParameterValueException("Only ROOT admins and template owners are allowed to modify isExtractable attribute.");
             } else {
                 // For Isos normal user can change it, as their are no derivatives.
                 updatedTemplate.setExtractable(isExtractable.booleanValue());
@@ -1918,7 +1919,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 }
             }
             if (cmd.getDetails() != null) {
-                details.remove("Encrypted.Password"); // new password will be generated during vm deployment from password enabled template
+                details.remove(VmDetailConstants.ENCRYPTED_PASSWORD); // new password will be generated during vm deployment from password enabled template
                 details.putAll(cmd.getDetails());
             }
             if (!details.isEmpty()) {

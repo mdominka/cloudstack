@@ -35,6 +35,7 @@ var g_cloudstackversion = null;
 var g_queryAsyncJobResultInterval = 3000;
 var g_idpList = null;
 var g_appendIdpDomain = false;
+var g_sortKeyIsAscending = false;
 
 //keyboard keycode
 var keycode_Enter = 13;
@@ -704,7 +705,16 @@ var addGuestNetworkDialog = {
                 networkdomain: {
                     label: 'label.network.domain',
                     docID: 'helpGuestNetworkZoneNetworkDomain'
+                },
+
+                hideipaddressusage: {
+                    label: 'label.network.hideipaddressusage',
+                    dependsOn: ['zoneId', 'physicalNetworkId', 'scope'],
+                    isBoolean: true,
+                    isChecked: false,
+                    docID: 'helpGuestNetworkHideIpAddressUsage'
                 }
+
             }
         },
 
@@ -795,6 +805,10 @@ var addGuestNetworkDialog = {
             if (args.data.networkdomain != null && args.data.networkdomain.length > 0){
                 array1.push("&networkdomain=" + encodeURIComponent(args.data.networkdomain));
             }
+            if (args.data.hideipaddressusage != null && args.data.hideipaddressusage) {
+                array1.push("&hideipaddressusage=true")
+            }
+
             $.ajax({
                 url: createURL("createNetwork" + array1.join("")),
                 dataType: "json",
@@ -2405,7 +2419,7 @@ cloudStack.api = {
                     url: createURL(updateCommand),
                     data: {
                         id: args.context[objType].id,
-                        sortKey: args.index
+                        sortKey: args.sortKey
                     },
                     success: function(json) {
                         args.response.success();
@@ -2541,6 +2555,39 @@ function strOrFunc(arg, args) {
     if (typeof arg === 'function')
         return arg(args);
     return arg;
+}
+
+function sortArrayByKey(arrayToSort, sortKey, reverse) {
+
+    if(!arrayToSort){
+        return;
+    }
+    // Move smaller items towards the front
+    // or back of the array depending on if
+    // we want to sort the array in reverse
+    // order or not.
+    var moveSmaller = reverse ? 1 : -1;
+
+    // Move larger items towards the front
+    // or back of the array depending on if
+    // we want to sort the array in reverse
+    // order or not.
+    var moveLarger = reverse ? -1 : 1;
+
+    /**
+     * @param  {*} a
+     * @param  {*} b
+     * @return {Number}
+     */
+    arrayToSort.sort(function(a, b) {
+        if (a[sortKey] < b[sortKey]) {
+            return moveSmaller;
+        }
+        if (a[sortKey] > b[sortKey]) {
+            return moveLarger;
+        }
+        return 0;
+    });
 }
 
 $.validator.addMethod("netmask", function(value, element) {

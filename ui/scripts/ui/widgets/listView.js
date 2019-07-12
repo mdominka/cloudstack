@@ -862,8 +862,10 @@
         if (groupableColumns) {
             $tr.addClass('groupable-header-columns').addClass('groupable-header');
             $.each(fields, function(key) {
-                if ($.inArray(key, hiddenFields) != -1)
+                if ($.inArray(key, hiddenFields) != -1) {
                     return true;
+                }
+
                 var field = this;
                 if (field.columns) {
                     var colspan = Object.keys(field.columns).length;
@@ -1333,13 +1335,18 @@
                         true, {},
                         $tr.closest('.list-view').data('view-args').context
                     );
-                    var rowIndex = $tr.closest('tbody').find('tr').length - ($tr.index());
+                    var sortKey;
+                    if (g_sortKeyIsAscending) {
+                        sortKey = $tr.index() + 1;
+                    } else {
+                        sortKey = ($tr.closest('tbody').find('tr').length - ($tr.index()));
+                    }
 
                     context[viewArgs.activeSection] = $tr.data('json-obj');
 
                     action.action({
                         context: context,
-                        index: rowIndex,
+                        sortKey: sortKey,
                         response: {
                             success: function(args) {},
                             error: function(args) {

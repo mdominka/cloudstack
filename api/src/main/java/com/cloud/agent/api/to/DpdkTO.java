@@ -14,8 +14,32 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package com.cloud.agent.api.to;
 
-//* Use custom.scss to override the default CloudStack styles
-//* Use it as your global @import file for many scss files.
-//* Use lines like @import "database.scss"; inside here only.
-//* Custom scss is imported on bottom of cloudstack3.scss
+public class DpdkTO {
+
+    private String path;
+    private String port;
+    private String mode;
+
+    public DpdkTO() {
+    }
+
+    public DpdkTO(String path, String port, String mode) {
+        this.path = path;
+        this.port = port;
+        this.mode = mode;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public String getPort() {
+        return port;
+    }
+
+    public String getMode() {
+        return mode;
+    }
+}

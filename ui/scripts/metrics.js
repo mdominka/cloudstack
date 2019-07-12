@@ -553,6 +553,15 @@
     cloudStack.sections.metrics.volumes = {
         title: 'label.metrics',
         listView: {
+            preFilter: function(args) {
+                var hiddenFields = [];
+                if (!isAdmin()) {
+                    hiddenFields.push('physicalsize');
+                    hiddenFields.push('storage');
+                    hiddenFields.push('storagetype');
+                }
+                return hiddenFields;
+            },
             id: 'volumes',
             fields: {
                 name: {
@@ -599,6 +608,21 @@
                 storage: {
                     label: 'label.metrics.storagepool'
                 },
+                disk: {
+                    label: 'label.metrics.disk.usage',
+                    collapsible: true,
+                    columns: {
+                        diskioread: {
+                            label: 'label.metrics.disk.read'
+                        },
+                        diskiowrite: {
+                            label: 'label.metrics.disk.write'
+                        },
+                        diskiopstotal: {
+                            label: 'label.metrics.disk.iops.total'
+                        }
+                    }
+                }
             },
             dataProvider: function(args) {
                 var data = {listAll: true};
