@@ -1433,6 +1433,7 @@ var dictionary = {
 "label.release.dedicated.zone":"Release Dedicated Zone",
 "label.remind.later":"Remind me later",
 "label.remove.ACL":"Remove ACL",
+"label.remove.backup":"Remove Backup configuration",
 "label.remove.egress.rule":"Remove egress rule",
 "label.remove.from.load.balancer":"Removing instance from load balancer",
 "label.remove.ingress.rule":"Remove ingress rule",

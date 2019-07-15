@@ -17,6 +17,7 @@
 package com.cloud.vm.snapshot;
 
 import static com.cloud.utils.db.SearchCriteria.Op.EQ;
+import static com.cloud.vm.snapshot.crypto.Aes.encrypt;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
@@ -67,7 +68,7 @@ public class BackupManagerImpl implements BackupManager {
         throws InvalidParameterValueException {
 
         final BackupConfigurationVO entity = new BackupConfigurationVO(bucket, endpoint, accessKey,
-            secretKey, description);
+            encrypt(secretKey), description);
 
         try {
             _backupConfigurationDao.persist(entity);
