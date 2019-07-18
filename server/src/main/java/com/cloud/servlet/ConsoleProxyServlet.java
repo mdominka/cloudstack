@@ -47,6 +47,7 @@ import com.google.gson.GsonBuilder;
 
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 
+import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor;
@@ -115,6 +116,11 @@ public class ConsoleProxyServlet extends HttpServlet {
         try {
             if (_accountMgr == null || _vmMgr == null || _ms == null) {
                 sendResponse(resp, "Service is not ready");
+                return;
+            }
+
+            if (ConsoleProxyManager.NoVncConsoleDefault.value()) {
+                req.getRequestDispatcher("/novncconsole").forward(req, resp);
                 return;
             }
 
