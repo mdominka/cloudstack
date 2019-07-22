@@ -29,6 +29,7 @@ import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
+import com.cloud.api.query.vo.NetworkOfferingJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
 import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
@@ -40,6 +41,7 @@ import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.api.query.vo.VpcOfferingJoinVO;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
@@ -1935,23 +1937,11 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public NetworkOfferingResponse createNetworkOfferingResponse(NetworkOffering offering) {
-        NetworkOfferingResponse response = new NetworkOfferingResponse();
-        response.setId(offering.getUuid());
-        response.setName(offering.getName());
-        response.setDisplayText(offering.getDisplayText());
-        response.setTags(offering.getTags());
-        response.setTrafficType(offering.getTrafficType().toString());
-        response.setIsDefault(offering.isDefault());
-        response.setSpecifyVlan(offering.isSpecifyVlan());
-        response.setConserveMode(offering.isConserveMode());
-        response.setSpecifyIpRanges(offering.isSpecifyIpRanges());
-        response.setAvailability(offering.getAvailability().toString());
-        response.setIsPersistent(offering.isPersistent());
+        if (!(offering instanceof NetworkOfferingJoinVO)) {
+            offering = ApiDBUtils.newNetworkOfferingView(offering);
+        }
+        NetworkOfferingResponse response = ApiDBUtils.newNetworkOfferingResponse(offering);
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
-        response.setEgressDefaultPolicy(offering.isEgressDefaultPolicy());
-        response.setConcurrentConnections(offering.getConcurrentConnections());
-        response.setSupportsStrechedL2Subnet(offering.isSupportingStrechedL2());
-        response.setSupportsPublicAccess(offering.isSupportingPublicAccess());
         Long so = null;
         if (offering.getServiceOfferingId() != null) {
             so = offering.getServiceOfferingId();
@@ -1964,13 +1954,6 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setServiceOfferingId(soffering.getUuid());
             }
         }
-
-        if (offering.getGuestType() != null) {
-            response.setGuestIpType(offering.getGuestType().toString());
-        }
-
-        response.setState(offering.getState().name());
-
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listNetworkOfferingServices(offering.getId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
         for (Map.Entry<Service,Set<Provider>> entry : serviceProviderMap.entrySet()) {
@@ -1991,7 +1974,6 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
             svcRsp.setProviders(providers);
-
             if (Service.Lb == service) {
                 List<CapabilityResponse> lbCapResponse = new ArrayList<CapabilityResponse>();
 
@@ -2039,20 +2021,15 @@ public class ApiResponseHelper implements ResponseGenerator {
 
                 svcRsp.setCapabilities(staticNatCapResponse);
             }
-
             serviceResponses.add(svcRsp);
         }
         response.setForVpc(_configMgr.isOfferingForVpc(offering));
-
         response.setServices(serviceResponses);
-
         //set network offering details
         Map<Detail, String> details = _ntwkModel.getNtwkOffDetails(offering.getId());
         if (details != null && !details.isEmpty()) {
             response.setDetails(details);
         }
-
-        response.setObjectName("networkoffering");
         return response;
     }
 
@@ -2854,15 +2831,10 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public VpcOfferingResponse createVpcOfferingResponse(VpcOffering offering) {
-        VpcOfferingResponse response = new VpcOfferingResponse();
-        response.setId(offering.getUuid());
-        response.setName(offering.getName());
-        response.setDisplayText(offering.getDisplayText());
-        response.setIsDefault(offering.isDefault());
-        response.setState(offering.getState().name());
-        response.setSupportsDistributedRouter(offering.supportsDistributedRouter());
-        response.setSupportsRegionLevelVpc(offering.offersRegionLevelVPC());
-
+        if (!(offering instanceof VpcOfferingJoinVO)) {
+            offering = ApiDBUtils.newVpcOfferingView(offering);
+        }
+        VpcOfferingResponse response = ApiDBUtils.newVpcOfferingResponse(offering);
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listVpcOffServices(offering.getId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
         for (Map.Entry<Service, Set<Provider>> entry : serviceProviderMap.entrySet()) {
@@ -2888,7 +2860,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             serviceResponses.add(svcRsp);
         }
         response.setServices(serviceResponses);
-        response.setObjectName("vpcoffering");
         return response;
     }
 

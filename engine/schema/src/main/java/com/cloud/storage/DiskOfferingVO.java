@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.storage;
 
+import com.cloud.offering.DiskOffering;
+import com.cloud.utils.db.GenericDao;
+
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -36,9 +39,6 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
-import com.cloud.offering.DiskOffering;
-import com.cloud.utils.db.GenericDao;
-
 @Entity
 @Table(name = "disk_offering")
 @Inheritance(strategy = InheritanceType.JOINED)
@@ -49,9 +49,6 @@ public class DiskOfferingVO implements DiskOffering {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     long id;
-
-    @Column(name = "domain_id")
-    Long domainId;
 
     @Column(name = "unique_name")
     private String uniqueName;
@@ -165,7 +162,6 @@ public class DiskOfferingVO implements DiskOffering {
 
     public DiskOfferingVO(Long domainId, String name, String displayText, Storage.ProvisioningType provisioningType, String uniqueName, long diskSize, String tags, boolean isCustomized, Boolean isCustomizedIops,
         Long minIops, Long maxIops, DiskCacheMode cacheMode) {
-        this.domainId = domainId;
         this.name = name;
         this.displayText = displayText;
         this.provisioningType = provisioningType;
@@ -183,9 +179,8 @@ public class DiskOfferingVO implements DiskOffering {
         this.cacheMode = cacheMode;
     }
 
-    public DiskOfferingVO(Long domainId, String name, String displayText, Storage.ProvisioningType provisioningType, long diskSize, String tags, boolean isCustomized, Boolean isCustomizedIops,
+    public DiskOfferingVO(String name, String displayText, Storage.ProvisioningType provisioningType, long diskSize, String tags, boolean isCustomized, Boolean isCustomizedIops,
             Long minIops, Long maxIops, DiskCacheMode cacheMode) {
-        this.domainId = domainId;
         this.name = name;
         this.displayText = displayText;
         this.provisioningType = provisioningType;
@@ -202,9 +197,8 @@ public class DiskOfferingVO implements DiskOffering {
         this.cacheMode = cacheMode;
     }
 
-    public DiskOfferingVO(Long domainId, String name, String displayText, Storage.ProvisioningType provisioningType, long diskSize, String tags, boolean isCustomized, Boolean isCustomizedIops,
-            Long minIops, Long maxIops) {
-        this.domainId = domainId;
+    public DiskOfferingVO(String name, String displayText, Storage.ProvisioningType provisioningType, long diskSize, String tags, boolean isCustomized, Boolean isCustomizedIops,
+                          Long minIops, Long maxIops) {
         this.name = name;
         this.displayText = displayText;
         this.provisioningType = provisioningType;
@@ -223,7 +217,6 @@ public class DiskOfferingVO implements DiskOffering {
 
     public DiskOfferingVO(String name, String displayText, Storage.ProvisioningType provisioningType, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage, boolean systemUse,
             boolean customized) {
-        domainId = null;
         type = Type.Service;
         this.name = name;
         this.displayText = displayText;
@@ -250,13 +243,12 @@ public class DiskOfferingVO implements DiskOffering {
         this.useLocalStorage = useLocalStorage;
         this.systemUse = systemUse;
         this.customized = customized;
-        this.domainId = domainId;
         uuid = UUID.randomUUID().toString();
         state = State.Active;
     }
 
     public DiskOfferingVO(String name, String displayText, Storage.ProvisioningType provisioningType, String uniqueName, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage, boolean systemUse,
-        boolean customized, Long domainId) {
+        boolean customized) {
         type = Type.Service;
         this.name = name;
         this.displayText = displayText;
@@ -266,14 +258,13 @@ public class DiskOfferingVO implements DiskOffering {
         this.useLocalStorage = useLocalStorage;
         this.systemUse = systemUse;
         this.customized = customized;
-        this.domainId = domainId;
         this.uniqueName = uniqueName;
         uuid = UUID.randomUUID().toString();
         state = State.Active;
     }
 
     public DiskOfferingVO(long id, String name, String displayText, Storage.ProvisioningType provisioningType, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage,
-            boolean systemUse, boolean customized, boolean customizedIops, Long domainId, Long minIops, Long maxIops) {
+            boolean systemUse, boolean customized, boolean customizedIops, Long minIops, Long maxIops) {
         this.id = id;
         type = Type.Service;
         this.name = name;
@@ -285,7 +276,6 @@ public class DiskOfferingVO implements DiskOffering {
         this.systemUse = systemUse;
         this.customized = customized;
         this.customizedIops = customizedIops;
-        this.domainId = domainId;
         uuid = UUID.randomUUID().toString();
         state = State.Active;
         this.minIops = minIops;
@@ -366,11 +356,6 @@ public class DiskOfferingVO implements DiskOffering {
     }
 
     @Override
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    @Override
     public Type getType() {
         return type;
     }
@@ -378,10 +363,6 @@ public class DiskOfferingVO implements DiskOffering {
     @Override
     public boolean isRecreatable() {
         return recreatable;
-    }
-
-    public void setDomainId(Long domainId) {
-        this.domainId = domainId;
     }
 
     @Override

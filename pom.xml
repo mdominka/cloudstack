@@ -148,6 +148,7 @@
         <cs.jstl-api.version>1.2.1</cs.jstl-api.version>
         <cs.kafka-clients.version>0.11.0.1</cs.kafka-clients.version>
         <cs.libvirt-java.version>0.5.1</cs.libvirt-java.version>
+        <cs.lombok.version>1.18.6</cs.lombok.version>
         <cs.mail.version>1.5.0-b01</cs.mail.version>
         <cs.mysql.version>5.1.34</cs.mysql.version>
         <cs.neethi.version>2.0.4</cs.neethi.version>

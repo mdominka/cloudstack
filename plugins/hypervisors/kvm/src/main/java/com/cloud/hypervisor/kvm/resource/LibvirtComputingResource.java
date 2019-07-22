@@ -2381,7 +2381,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.defNetworkBasedDisk(glusterVolume + path.replace(mountpoint, ""), pool.getSourceHost(), pool.getSourcePort(), null,
                             null, devId, diskBusType, DiskProtocol.GLUSTER, DiskDef.DiskFmtType.QCOW2);
                 } else if (pool.getType() == StoragePoolType.CLVM || physicalDisk.getFormat() == PhysicalDiskFormat.RAW) {
-                    disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusType);
+                    if (volume.getType() == Volume.Type.DATADISK) {
+                        disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData);
+                    }
+                    else {
+                        disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusType);
+                    }
                 } else {
                     if (volume.getType() == Volume.Type.DATADISK) {
                         disk.defFileBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData, DiskDef.DiskFmtType.QCOW2);
@@ -3203,7 +3208,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return DiskDef.DiskBus.IDE;
         } else if (platformEmulator.startsWith("Other PV Virtio-SCSI")) {
             return DiskDef.DiskBus.SCSI;
-        } else if (platformEmulator.startsWith("Ubuntu") ||
+        } else if (platformEmulator.contains("Ubuntu") ||
                 platformEmulator.startsWith("Fedora") ||
                 platformEmulator.startsWith("CentOS") ||
                 platformEmulator.startsWith("Red Hat Enterprise Linux") ||
