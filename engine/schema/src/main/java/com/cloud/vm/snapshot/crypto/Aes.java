@@ -1,11 +1,19 @@
 package com.cloud.vm.snapshot.crypto;
 
+import static com.cloud.utils.PropertiesUtil.findConfigFile;
+import static java.util.Objects.isNull;
+
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
+import java.util.Properties;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -19,9 +27,8 @@ public class Aes {
   private static final Base64.Encoder ENCODER = Base64.getEncoder();
   private static final Base64.Decoder DECODER = Base64.getDecoder();
 
+  private static final String AES_PROPERTIES = "aes.properties";
   private static final String ALGORITHM = "AES";
-  private static final byte[] KEY_VALUE =
-      {'O','5','n','L','y','2','F','O','r','t','E','s','T','3','6','x'};
 
   private Aes(){
   }
@@ -59,12 +66,27 @@ public class Aes {
   }
 
   private static Key generateKey(){
-    return new SecretKeySpec(KEY_VALUE, ALGORITHM);
+    final File aesConfig = findConfigFile(AES_PROPERTIES);
+    if (isNull(aesConfig)){
+      throw new AesException("Could not open configuration file: "+ AES_PROPERTIES);
+    }
+    try (final InputStream input = new FileInputStream(aesConfig)){
+      final Properties config = new Properties();
+      config.load(input);
+      final String secretKey = config.getProperty("secret.key");
+
+      return new SecretKeySpec(secretKey.getBytes(), ALGORITHM);
+    } catch (final IOException cause) {
+      throw new AesException("Could not open configuration file. ", cause);
+    }
   }
 
   private static final class AesException extends RuntimeException {
     private static final long serialVersionUID = 8160879326521709344L;
 
+    private AesException(final String message){
+      super(message);
+    }
     private AesException(final String message, final Throwable cause) {
       super(message, cause);
     }
