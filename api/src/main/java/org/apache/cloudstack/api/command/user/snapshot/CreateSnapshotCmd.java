@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.snapshot;
 
+import static java.util.Objects.nonNull;
+
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -235,7 +237,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     private Snapshot.LocationType getLocationType() {
 
-        if (s3Backup) {
+        if (nonNull(s3Backup) && s3Backup) {
             return Snapshot.LocationType.CUSTOMTARGET;
         }
 
