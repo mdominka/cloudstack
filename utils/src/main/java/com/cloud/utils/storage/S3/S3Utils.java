@@ -19,12 +19,20 @@
 
 package com.cloud.utils.storage.S3;
 
+import static com.amazonaws.Protocol.HTTP;
+import static com.amazonaws.Protocol.HTTPS;
+import static java.lang.String.format;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
+import static org.apache.commons.lang.StringUtils.isNotBlank;
+
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.HttpMethod;
 import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
@@ -33,6 +41,7 @@ import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.transfer.Download;
 import com.amazonaws.services.s3.transfer.TransferManager;
+import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
 import com.amazonaws.services.s3.transfer.Upload;
 import org.apache.log4j.Logger;
 
@@ -45,19 +54,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.amazonaws.Protocol.HTTP;
-import static com.amazonaws.Protocol.HTTPS;
-import static java.lang.String.format;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.unmodifiableList;
-import static org.apache.commons.lang.StringUtils.isNotBlank;
-
 
 public final class S3Utils {
 
     private static final Logger LOGGER = Logger.getLogger(S3Utils.class);
 
     public static final String SEPARATOR = "/";
+
+    private static final long FILE_PART_SIZE = 5*1024*1025;
 
     private static final Map<String, TransferManager> TRANSFERMANAGER_ACCESSKEY_MAP = new HashMap<>();
 
@@ -106,7 +110,10 @@ public final class S3Utils {
                 configuration.getProtocol(), configuration.getSignerOverride(), configuration.getConnectionTimeout(), configuration.getMaxErrorRetry(), configuration.getSocketTimeout(),
                 clientOptions.getUseTCPKeepAlive(), clientOptions.getConnectionTtl()));
 
-        final AmazonS3Client client = new AmazonS3Client(basicAWSCredentials, configuration);
+        final AmazonS3 client = AmazonS3ClientBuilder.standard()
+            .withCredentials(new AWSStaticCredentialsProvider(basicAWSCredentials))
+            .withClientConfiguration(configuration)
+            .build();
 
         if (isNotBlank(clientOptions.getEndPoint())) {
             LOGGER.debug(format("Setting the end point for S3 client with access key %1$s to %2$s.", clientOptions.getAccessKey(), clientOptions.getEndPoint()));
@@ -114,7 +121,12 @@ public final class S3Utils {
             client.setEndpoint(clientOptions.getEndPoint());
         }
 
-        TRANSFERMANAGER_ACCESSKEY_MAP.put(clientOptions.getAccessKey(), new TransferManager(client));
+        final TransferManager transferManager = TransferManagerBuilder.standard()
+            .withS3Client(client)
+            .withMultipartUploadThreshold(FILE_PART_SIZE)
+            .build();
+
+        TRANSFERMANAGER_ACCESSKEY_MAP.put(clientOptions.getAccessKey(), transferManager);
 
         return TRANSFERMANAGER_ACCESSKEY_MAP.get(clientOptions.getAccessKey());
     }

@@ -1221,6 +1221,15 @@
                           asyncBackup: {
                             label: 'label.async.backup',
                             isBoolean: true
+                          },
+                          s3Backup: {
+                            label: 'label.s3.backup',
+                            dependsOn: 'asyncBackup',
+                            isBoolean: true,
+                            isHidden: function (args) {
+                              var asyncBackup = args.asyncBackup.valueOf();
+                              return asyncBackup !== true;
+                            }
                           }
                         }
                       },
@@ -1228,7 +1237,8 @@
                         var data = {
                           volumeId: args.data.volume,
                           quiescevm: args.data.quiescevm === 'on',
-                          asyncBackup:  args.data.asyncBackup === 'on'
+                          asyncBackup:  args.data.asyncBackup === 'on',
+                          s3Backup: args.data.s3Backup === 'on'
                         };
                         if (args.data.name != null && args.data.name.length > 0) {
                           $.extend(data, {

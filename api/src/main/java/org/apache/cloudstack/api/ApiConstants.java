@@ -590,6 +590,7 @@ public class ApiConstants {
     public static final String NSX_LOGICAL_SWITCH = "nsxlogicalswitch";
     public static final String NSX_LOGICAL_SWITCH_PORT = "nsxlogicalswitchport";
     public static final String S3_ACCESS_KEY = "accesskey";
+    public static final String S3_BACKUP = "s3backup";
     public static final String S3_SECRET_KEY = "secretkey";
     public static final String S3_END_POINT = "endpoint";
     public static final String S3_BUCKET_NAME = "bucket";

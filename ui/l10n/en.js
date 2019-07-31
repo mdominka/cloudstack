@@ -49,6 +49,7 @@ var dictionary = {
 "inline":"Inline",
 "instances.actions.reboot.label":"Reboot instance",
 "label.async.backup":"Async Backup",
+"label.s3.backup":"S3 Backup",
 "label.CIDR.list":"CIDR list",
 "label.CIDR.of.destination.network":"CIDR of destination network",
 "label.CPU.cap":"CPU Cap",

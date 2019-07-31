@@ -16,10 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.snapshot;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-
+import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.projects.Project;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.Volume;
+import com.cloud.user.Account;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,15 +40,9 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
-import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.projects.Project;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.Volume;
-import com.cloud.user.Account;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 @APICommand(name = "createSnapshot", description = "Creates an instant snapshot of a volume.", responseObject = SnapshotResponse.class, entityType = {Snapshot.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -87,6 +86,9 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.ASYNC_BACKUP, type = CommandType.BOOLEAN, required = false, description = "asynchronous backup if true")
     private Boolean asyncBackup;
+
+    @Parameter(name = ApiConstants.S3_BACKUP, type = CommandType.BOOLEAN, description = "backup also to s3 storage if true")
+    private Boolean s3Backup;
 
     @Parameter(name = ApiConstants.TAGS, type = CommandType.MAP, description = "Map of tags (key/value pairs)")
     private Map tags;
@@ -216,7 +218,8 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
         Snapshot snapshot;
         try {
             snapshot =
-                _volumeService.takeSnapshot(getVolumeId(), getPolicyId(), getEntityId(), _accountService.getAccount(getEntityOwnerId()), getQuiescevm(), getLocationType(), getAsyncBackup(), getTags());
+                _volumeService.takeSnapshot(getVolumeId(), getPolicyId(), getEntityId(), _accountService.getAccount(getEntityOwnerId()),
+                    getQuiescevm(), getLocationType(), getAsyncBackup(), getTags());
 
             if (snapshot != null) {
                 SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);
@@ -232,7 +235,12 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     private Snapshot.LocationType getLocationType() {
 
-        if (Snapshot.LocationType.values() == null || Snapshot.LocationType.values().length == 0 || locationType == null) {
+        if (s3Backup) {
+            return Snapshot.LocationType.CUSTOMTARGET;
+        }
+
+        if (Snapshot.LocationType.values() == null || Snapshot.LocationType.values().length == 0 ||
+            locationType == null) {
             return null;
         }
 
@@ -269,6 +277,13 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
         } else {
             return asyncBackup;
         }
+    }
+
+    public Boolean getS3Backup() {
+        if (s3Backup == null) {
+            return false;
+        }
+        return s3Backup;
     }
 
     protected String getVolumeUuid() {

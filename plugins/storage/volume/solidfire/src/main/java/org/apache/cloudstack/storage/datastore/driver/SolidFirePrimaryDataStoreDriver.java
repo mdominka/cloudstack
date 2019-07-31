@@ -50,6 +50,9 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.snapshot.BackupConfigurationVO;
+import com.cloud.vm.snapshot.crypto.Aes;
+import com.cloud.vm.snapshot.dao.BackupConfigurationDao;
 import com.google.common.base.Preconditions;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -115,6 +118,8 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Inject private VolumeDetailsDao volumeDetailsDao;
     @Inject private VolumeDataFactory volumeFactory;
     @Inject private ConfigurationDao _configDao;
+    @Inject
+    private BackupConfigurationDao backupConfigurationDao;
 
     @Override
     public Map<String, String> getCapabilities() {
@@ -886,12 +891,14 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 long sfNewSnapshotId = SolidFireUtil.createSnapshot(sfConnection, sfVolumeId, SolidFireUtil.getSolidFireVolumeName(sfNewSnapshotName),
                         getSnapshotAttributes(snapshotInfo));
 
-                if (snapshotInfo.getLocationType() == Snapshot.LocationType.CUSTOMTARGET) {
-                    Map<String, String> s3Parameters = new HashMap<>();
-                    s3Parameters.put("hostname", _configDao.getValue("s3.hostname"));
-                    s3Parameters.put("awsAccessKeyID", _configDao.getValue("s3.access.key.id"));
-                    s3Parameters.put("awsSecretAccessKey", _configDao.getValue("s3.secret.access.key"));
-                    s3Parameters.put("bucket", _configDao.getValue("s3.bucket"));
+                if (snapshotInfo.getLocationType().equals(Snapshot.LocationType.CUSTOMTARGET)) {
+                    final BackupConfigurationVO s3config = backupConfigurationDao.listAll().get(0);
+
+                    final Map<String, String> s3Parameters = new HashMap<>();
+                    s3Parameters.put("hostname", s3config.getEndpoint());
+                    s3Parameters.put("awsAccessKeyID", s3config.getAccessKey());
+                    s3Parameters.put("awsSecretAccessKey", Aes.decrypt(s3config.getSecretKey()));
+                    s3Parameters.put("bucket", s3config.getBucket());
                     SolidFireUtil.startBulkVolumeRead(sfConnection, sfVolumeId, volumeInfo.getName(), s3Parameters);
                 }
 
