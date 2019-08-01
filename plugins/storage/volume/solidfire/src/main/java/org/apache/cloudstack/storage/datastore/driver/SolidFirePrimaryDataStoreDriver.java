@@ -888,8 +888,8 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     sfNewSnapshotName = StringUtils.left(volumeInfo.getName(), (volumeInfo.getName().length() - trimRequired)) + "-" + snapshotInfo.getUuid();
                 }
 
-                long sfNewSnapshotId = SolidFireUtil.createSnapshot(sfConnection, sfVolumeId, SolidFireUtil.getSolidFireVolumeName(sfNewSnapshotName),
-                        getSnapshotAttributes(snapshotInfo));
+                final long sfNewSnapshotId = SolidFireUtil.createSnapshot(sfConnection, sfVolumeId,
+                    SolidFireUtil.getSolidFireVolumeName(sfNewSnapshotName), getSnapshotAttributes(snapshotInfo));
 
                 if (snapshotInfo.getLocationType().equals(Snapshot.LocationType.CUSTOMTARGET)) {
                     final BackupConfigurationVO s3config = backupConfigurationDao.listAll().get(0);
@@ -899,7 +899,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     s3Parameters.put("awsAccessKeyID", s3config.getAccessKey());
                     s3Parameters.put("awsSecretAccessKey", Aes.decrypt(s3config.getSecretKey()));
                     s3Parameters.put("bucket", s3config.getBucket());
-                    SolidFireUtil.startBulkVolumeRead(sfConnection, sfVolumeId, volumeInfo.getName(), s3Parameters);
+                    SolidFireUtil.startBulkVolumeRead(sfNewSnapshotId, sfConnection, sfVolumeId, volumeInfo.getName(), s3Parameters);
                 }
 
                 updateSnapshotDetails(snapshotInfo.getId(), volumeInfo.getId(), sfVolumeId, sfNewSnapshotId, storagePoolId, sfVolumeSize);

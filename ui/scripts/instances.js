@@ -1226,10 +1226,7 @@
                             label: 'label.s3.backup',
                             dependsOn: 'asyncBackup',
                             isBoolean: true,
-                            isHidden: function (args) {
-                              var asyncBackup = args.asyncBackup.valueOf();
-                              return asyncBackup !== true;
-                            }
+                            isHidden: true
                           }
                         }
                       },

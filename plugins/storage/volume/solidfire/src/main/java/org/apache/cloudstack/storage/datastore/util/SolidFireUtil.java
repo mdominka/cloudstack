@@ -1018,22 +1018,16 @@ public class SolidFireUtil {
         return scriptParameters;
     }
 
-    public static void startBulkVolumeRead(SolidFireConnection sfConnection, long volumeId,
-        String volumeName, final Map<String, String> parameters) {
+    public static void startBulkVolumeRead(final long snapShotId, final SolidFireConnection sfConnection,
+        final long volumeId, final String volumeName, final Map<String, String> parameters) {
 
-        ListSnapshotsRequest snapshotRequest = ListSnapshotsRequest.builder()
-            .optionalVolumeID(volumeId)
-            .build();
+        final Map<String, Object> scriptParameters =
+            buildScriptParameters(volumeId, volumeName, parameters, false);
 
-        Snapshot[] snapshots = getSolidFireElement(sfConnection).listSnapshots(snapshotRequest).getSnapshots();
-        Long latestSnapshotId = snapshots[snapshots.length - 1].getSnapshotID();
-
-        final Map<String, Object> scriptParameters = buildScriptParameters(volumeId, volumeName, parameters, false);
-
-        StartBulkVolumeReadRequest request = StartBulkVolumeReadRequest.builder()
+        final StartBulkVolumeReadRequest request = StartBulkVolumeReadRequest.builder()
             .format(S3_FORMAT)
             .volumeID(volumeId)
-            .optionalSnapshotID(latestSnapshotId)
+            .optionalSnapshotID(snapShotId)
             .optionalScript("bv_internal.py")
             .optionalScriptParameters(scriptParameters)
             .build();
