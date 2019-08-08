@@ -20,6 +20,9 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.annotations.Expose;
 
+import java.util.Date;
+import java.util.UUID;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -28,8 +31,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import java.util.Date;
-import java.util.UUID;
 
 @Entity
 @Table(name = "snapshots")
@@ -134,9 +135,17 @@ public class SnapshotVO implements Snapshot {
         return dataCenterId;
     }
 
+    public void setDataCenterId(final long dataCenterId) {
+        this.dataCenterId = dataCenterId;
+    }
+
     @Override
     public long getAccountId() {
         return accountId;
+    }
+
+    public void setAccountId(final long accountId) {
+        this.accountId = accountId;
     }
 
     @Override
@@ -144,17 +153,25 @@ public class SnapshotVO implements Snapshot {
         return domainId;
     }
 
+    public void setDomainId(final long domainId) {
+        this.domainId = domainId;
+    }
+
     @Override
     public long getVolumeId() {
         return volumeId;
+    }
+
+    public void setVolumeId(final Long volumeId) {
+        this.volumeId = volumeId;
     }
 
     public long getDiskOfferingId() {
         return diskOfferingId;
     }
 
-    public void setVolumeId(Long volumeId) {
-        this.volumeId = volumeId;
+    public void setDiskOfferingId(final Long diskOfferingId) {
+        this.diskOfferingId = diskOfferingId;
     }
 
     @Override
@@ -162,9 +179,17 @@ public class SnapshotVO implements Snapshot {
         return name;
     }
 
+    public void setName(final String name) {
+        this.name = name;
+    }
+
     @Override
     public long getSnapshotId() {
         return id;
+    }
+
+    public void setSnapshotId(final long snapshotId) {
+        this.id = snapshotId;
     }
 
     @Override
@@ -194,6 +219,10 @@ public class SnapshotVO implements Snapshot {
         return hypervisorType;
     }
 
+    public void setHypervisorType(final HypervisorType hypervisorType) {
+        this.hypervisorType = hypervisorType;
+    }
+
     public void setSnapshotType(short snapshotType) {
         this.snapshotType = snapshotType;
     }
@@ -210,12 +239,24 @@ public class SnapshotVO implements Snapshot {
         return size;
     }
 
+    public void setSize(final long size) {
+        this.size = size;
+    }
+
     public Long getMinIops() {
         return minIops;
     }
 
+    public void setMinIops(final Long minIops) {
+        this.minIops = minIops;
+    }
+
     public Long getMaxIops() {
         return maxIops;
+    }
+
+    public void setMaxIops(final Long maxIops) {
+        this.maxIops = maxIops;
     }
 
     public String getTypeDescription() {
@@ -237,6 +278,10 @@ public class SnapshotVO implements Snapshot {
     @Override
     public Date getCreated() {
         return created;
+    }
+
+    public void setCreated(final Date created) {
+        this.created = created;
     }
 
     public Date getRemoved() {

@@ -27,6 +27,8 @@ import com.cloud.user.AccountDetailVO;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.snapshot.BackupConfigurationVO;
+import com.cloud.vm.snapshot.crypto.Aes;
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Longs;
 import com.solidfire.client.ElementFactory;
@@ -68,6 +70,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -1019,8 +1022,9 @@ public class SolidFireUtil {
     }
 
     public static void startBulkVolumeRead(final long snapShotId, final SolidFireConnection sfConnection,
-        final long volumeId, final String volumeName, final Map<String, String> parameters) {
+        final long volumeId, final String volumeName, final BackupConfigurationVO s3Config) {
 
+        final Map<String, String> parameters = buildS3Parameters(s3Config);
         final Map<String, Object> scriptParameters =
             buildScriptParameters(volumeId, volumeName, parameters, false);
 
@@ -1048,6 +1052,25 @@ public class SolidFireUtil {
             .build();
 
         getSolidFireElement(sfConnection).startBulkVolumeWrite(request);
+    }
+
+    public static List<Snapshot> getSnapshotList(final SolidFireUtil.SolidFireConnection connection,
+        final long volumeId) {
+        final ListSnapshotsRequest snapshotsRequest = ListSnapshotsRequest.builder()
+            .optionalVolumeID(volumeId)
+            .build();
+
+        return Arrays.asList(getSolidFireElement(connection)
+            .listSnapshots(snapshotsRequest).getSnapshots());
+    }
+
+    private static Map<String, String> buildS3Parameters(final BackupConfigurationVO s3config) {
+        final Map<String, String> s3Parameters = new HashMap<>();
+        s3Parameters.put("hostname", s3config.getEndpoint());
+        s3Parameters.put("awsAccessKeyID", s3config.getAccessKey());
+        s3Parameters.put("awsSecretAccessKey", Aes.decrypt(s3config.getSecretKey()));
+        s3Parameters.put("bucket", s3config.getBucket());
+        return s3Parameters;
     }
 
     public static SolidFireSnapshot getSnapshot(SolidFireConnection sfConnection, long volumeId, long snapshotId) {

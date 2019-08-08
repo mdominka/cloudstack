@@ -1833,6 +1833,9 @@
                             label: 'label.created',
                             converter: cloudStack.converters.toLocalDate
                         },
+                        locationtype: {
+                            label: 'label.snapshot.location'
+                        },
                         state: {
                             label: 'label.state',
                             indicator: {

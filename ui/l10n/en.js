@@ -1596,6 +1596,7 @@ var dictionary = {
 "label.smb.username":"SMB Username",
 "label.snapshot":"Snapshot",
 "label.snapshot.limits":"Snapshot Limits",
+"label.snapshot.location":"Snapshot location",
 "label.snapshot.name":"Snapshot Name",
 "label.snapshot.s":"Snapshots",
 "label.snapshot.schedule":"Set up Recurring Snapshot",

@@ -16,11 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.snapshot;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.log4j.Logger;
-
+import com.cloud.storage.Snapshot;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -30,9 +27,10 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.log4j.Logger;
 
-import com.cloud.storage.Snapshot;
-import com.cloud.utils.Pair;
+import java.util.ArrayList;
+import java.util.List;
 
 @APICommand(name = "listSnapshots", description = "Lists all available snapshots for the account.", responseObject = SnapshotResponse.class, entityType = {
         Snapshot.class }, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -66,6 +64,9 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "list snapshots by zone id")
     private Long zoneId;
 
+    @Parameter(name = ApiConstants.LOCATION_TYPE, type = CommandType.STRING, description = "location of the snapshot, valid values are PRIMARY, SECONDARY, CUSTOMTARGET, CLOUD")
+    private String locationType;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -93,6 +94,8 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     public Long getZoneId() {
         return zoneId;
     }
+
+    public String getLocationType() { return locationType; }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

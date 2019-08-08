@@ -51,7 +51,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.snapshot.BackupConfigurationVO;
-import com.cloud.vm.snapshot.crypto.Aes;
 import com.cloud.vm.snapshot.dao.BackupConfigurationDao;
 import com.google.common.base.Preconditions;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
@@ -61,12 +60,12 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CommandResult;
@@ -892,16 +891,12 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     SolidFireUtil.getSolidFireVolumeName(sfNewSnapshotName), getSnapshotAttributes(snapshotInfo));
 
                 if (snapshotInfo.getLocationType().equals(Snapshot.LocationType.CUSTOMTARGET)) {
-                    final BackupConfigurationVO s3config = backupConfigurationDao.listAll().get(0);
-
-                    final Map<String, String> s3Parameters = new HashMap<>();
-                    s3Parameters.put("hostname", s3config.getEndpoint());
-                    s3Parameters.put("awsAccessKeyID", s3config.getAccessKey());
-                    s3Parameters.put("awsSecretAccessKey", Aes.decrypt(s3config.getSecretKey()));
-                    s3Parameters.put("bucket", s3config.getBucket());
-                    SolidFireUtil.startBulkVolumeRead(sfNewSnapshotId, sfConnection, sfVolumeId, volumeInfo.getName(), s3Parameters);
+                    final List<BackupConfigurationVO> s3config = backupConfigurationDao.listAll();
+                    if (!s3config.isEmpty()) {
+                        SolidFireUtil.startBulkVolumeRead(sfNewSnapshotId, sfConnection, sfVolumeId,
+                            volumeInfo.getName(), s3config.get(0));
+                    }
                 }
-
                 updateSnapshotDetails(snapshotInfo.getId(), volumeInfo.getId(), sfVolumeId, sfNewSnapshotId, storagePoolId, sfVolumeSize);
 
                 snapshotObjectTo.setPath("SfSnapshotId=" + sfNewSnapshotId);
