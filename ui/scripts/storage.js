@@ -916,6 +916,12 @@
                                             label: 'label.async.backup',
                                             isBoolean: true
                                         },
+                                        s3Backup: {
+                                            label: 'label.s3.backup',
+                                            dependsOn: 'asyncBackup',
+                                            isBoolean: true,
+                                            isHidden: true
+                                        },
                                         tags: {
                                             label: 'label.tags',
                                             tagger: true
@@ -926,7 +932,8 @@
                                     var data = {
                                         volumeId: args.context.volumes[0].id,
                                         quiescevm: (args.data.quiescevm == 'on' ? true: false),
-                                        asyncBackup: (args.data.asyncBackup == 'on' ? true: false)
+                                        asyncBackup: (args.data.asyncBackup == 'on' ? true: false),
+                                        s3Backup: args.data.s3Backup === 'on'
                                     };
                                     if (args.data.name != null && args.data.name.length > 0) {
                                         $.extend(data, {

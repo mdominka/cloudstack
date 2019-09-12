@@ -57,6 +57,7 @@ import com.solidfire.element.api.RollbackToSnapshotRequest;
 import com.solidfire.element.api.Snapshot;
 import com.solidfire.element.api.SolidFireElement;
 import com.solidfire.element.api.StartBulkVolumeReadRequest;
+import com.solidfire.element.api.StartBulkVolumeReadResult;
 import com.solidfire.element.api.StartBulkVolumeWriteRequest;
 import com.solidfire.element.api.Volume;
 import com.solidfire.element.api.VolumeAccessGroup;
@@ -1036,7 +1037,8 @@ public class SolidFireUtil {
             .optionalScriptParameters(scriptParameters)
             .build();
 
-        getSolidFireElement(sfConnection).startBulkVolumeRead(request);
+        final SolidFireElement sfe = getSolidFireElement(sfConnection);
+        final StartBulkVolumeReadResult sbvreadResult = sfe.startBulkVolumeRead(request);
     }
 
     public static void startBulkVolumeWrite(SolidFireConnection sfConnection, long volumeId,
