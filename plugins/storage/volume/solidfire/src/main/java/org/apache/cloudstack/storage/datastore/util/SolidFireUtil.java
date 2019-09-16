@@ -1027,7 +1027,7 @@ public class SolidFireUtil {
 
         final Map<String, String> parameters = buildS3Parameters(s3Config);
         final Map<String, Object> scriptParameters =
-            buildScriptParameters(volumeId, volumeName, parameters, false);
+            buildScriptParameters(volumeId, volumeName, parameters, true);
 
         final StartBulkVolumeReadRequest request = StartBulkVolumeReadRequest.builder()
             .format(S3_FORMAT)
@@ -1044,7 +1044,7 @@ public class SolidFireUtil {
     public static void startBulkVolumeWrite(SolidFireConnection sfConnection, long volumeId,
         String volumeName, final Map<String, String> parameters) {
 
-        final Map<String, Object> scriptParameters = buildScriptParameters(volumeId, volumeName, parameters, true);
+        final Map<String, Object> scriptParameters = buildScriptParameters(volumeId, volumeName, parameters, false);
 
         StartBulkVolumeWriteRequest request = StartBulkVolumeWriteRequest.builder()
             .format(S3_FORMAT)
