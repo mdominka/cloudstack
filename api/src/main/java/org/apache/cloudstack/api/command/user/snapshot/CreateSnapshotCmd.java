@@ -42,6 +42,7 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -231,7 +232,8 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + getVolumeUuid());
             }
         } catch (Exception e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + getVolumeUuid() +'\n'+e);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume "
+                + getVolumeUuid() + '\n' + e + " cause: " +e.getCause() + " get suppressed " + Arrays.toString(e.getSuppressed()));
         }
     }
 
