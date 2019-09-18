@@ -16,10 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.snapshot;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.projects.Project;
+import com.cloud.storage.Volume;
+import com.cloud.storage.snapshot.SnapshotPolicy;
+import com.cloud.user.Account;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -32,12 +34,9 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.projects.Project;
-import com.cloud.storage.Volume;
-import com.cloud.storage.snapshot.SnapshotPolicy;
-import com.cloud.user.Account;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 @APICommand(name = "createSnapshotPolicy", description = "Creates a snapshot policy for the account.", responseObject = SnapshotPolicyResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -74,6 +73,9 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.TAGS, type = CommandType.MAP, description = "Map of tags (key/value pairs)")
     private Map tags;
+
+    @Parameter(name = ApiConstants.S3_BACKUP, type = CommandType.BOOLEAN, description = "backup also to s3 storage if true")
+    private Boolean s3Backup;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -162,5 +164,12 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot policy");
         }
+    }
+
+    public Boolean getS3Backup() {
+        if (s3Backup == null) {
+            return false;
+        }
+        return s3Backup;
     }
 }

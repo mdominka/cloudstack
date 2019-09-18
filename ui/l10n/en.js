@@ -50,6 +50,7 @@ var dictionary = {
 "instances.actions.reboot.label":"Reboot instance",
 "label.async.backup":"Async Backup",
 "label.s3.backup":"S3 Backup",
+"label.s3.backup.info":"backup also to S3 storage",
 "label.CIDR.list":"CIDR list",
 "label.CIDR.of.destination.network":"CIDR of destination network",
 "label.CPU.cap":"CPU Cap",

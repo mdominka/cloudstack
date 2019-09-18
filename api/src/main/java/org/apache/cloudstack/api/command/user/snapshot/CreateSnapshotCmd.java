@@ -46,6 +46,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @APICommand(name = "createSnapshot", description = "Creates an instant snapshot of a volume.", responseObject = SnapshotResponse.class, entityType = {Snapshot.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -232,8 +233,26 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + getVolumeUuid());
             }
         } catch (Exception e) {
+
+            Throwable nestedExcption = null;
+            Throwable nestedNestedException = null;
+            Throwable nestedNestedNestedException = null;
+
+            if (Objects.nonNull(e.getCause())) {
+                nestedExcption = e.getCause().getCause();
+            }
+            if (Objects.nonNull(nestedExcption)) {
+                nestedNestedException = nestedExcption.getCause();
+            }
+            if (Objects.nonNull(nestedNestedException)) {
+                nestedNestedNestedException = nestedNestedException.getCause();
+            }
+
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume "
-                + getVolumeUuid() + '\n' + e + " cause: " +e.getCause() + " get suppressed " + Arrays.toString(e.getSuppressed()));
+                + getVolumeUuid() + '\n' + e + " cause: " +e.getCause() + " <<<< Nested Exception >>>: "
+                + nestedExcption + " <<< Nested Nested Exception >>>: " + nestedNestedException
+                + " <<< Nested Nested Nested Exception >>>: " + nestedNestedNestedException
+                +" get suppressed " + Arrays.toString(e.getSuppressed()));
         }
     }
 

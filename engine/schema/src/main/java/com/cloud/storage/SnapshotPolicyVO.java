@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.storage;
 
+import com.cloud.storage.snapshot.SnapshotPolicy;
+import com.cloud.utils.DateUtil.IntervalType;
+
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -24,9 +27,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
-import com.cloud.storage.snapshot.SnapshotPolicy;
-import com.cloud.utils.DateUtil.IntervalType;
 
 @Entity
 @Table(name = "snapshot_policy")
@@ -61,11 +61,15 @@ public class SnapshotPolicyVO implements SnapshotPolicy {
     @Column(name = "display", updatable = true, nullable = false)
     protected boolean display = true;
 
+    @Column(name = "s3_backup")
+    private boolean s3Backup = false;
+
     public SnapshotPolicyVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public SnapshotPolicyVO(long volumeId, String schedule, String timezone, IntervalType intvType, int maxSnaps, boolean display) {
+    public SnapshotPolicyVO(long volumeId, String schedule, String timezone, IntervalType intvType,
+        int maxSnaps, boolean display) {
         this.volumeId = volumeId;
         this.schedule = schedule;
         this.timezone = timezone;
@@ -134,6 +138,16 @@ public class SnapshotPolicyVO implements SnapshotPolicy {
     @Override
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    @Override
+    public boolean isS3backup() {
+        return this.s3Backup;
+    }
+
+    @Override
+    public void setS3Backup(final boolean s3Backup) {
+        this.s3Backup = s3Backup;
     }
 
     @Override

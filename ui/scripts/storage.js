@@ -1000,6 +1000,7 @@
                                                                     time: snapshot.intervaltype > 0 ? snapshot.schedule.split(':')[1] + ':' + snapshot.schedule.split(':')[0] : snapshot.schedule,
                                                                     timezone: snapshot.timezone,
                                                                     keep: snapshot.maxsnaps,
+                                                                    s3backup: snapshot.s3Backup,
                                                                     'day-of-week': snapshot.intervaltype == 2 ? snapshot.schedule.split(':')[2] : null,
                                                                     'day-of-month': snapshot.intervaltype == 3 ? snapshot.schedule.split(':')[2] : null
                                                                 };
@@ -1017,6 +1018,7 @@
                                                     volumeid: args.context.volumes[0].id,
                                                     intervaltype: snap['snapshot-type'],
                                                     maxsnaps: snap.maxsnaps,
+                                                    s3backup: snap.s3backup,
                                                     timezone: snap.timezone
                                                 };
 
@@ -1093,6 +1095,7 @@
                                                                 time: snapshot.intervaltype > 0 ? snapshot.schedule.split(':')[1] + ':' + snapshot.schedule.split(':')[0] : snapshot.schedule,
                                                                 timezone: snapshot.timezone,
                                                                 keep: snapshot.maxsnaps,
+                                                                s3backup: snapshot.s3backup,
                                                                 'day-of-week': snapshot.intervaltype == 2 ? snapshot.schedule.split(':')[2] : null,
                                                                 'day-of-month': snapshot.intervaltype == 3 ? snapshot.schedule.split(':')[2] : null
                                                             }

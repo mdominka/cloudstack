@@ -43,4 +43,8 @@ public interface SnapshotPolicy extends Identity, InternalIdentity, Displayable 
     boolean isActive();
 
     void setActive(boolean active);
+
+    boolean isS3backup();
+
+    void setS3Backup(boolean s3Backup);
 }

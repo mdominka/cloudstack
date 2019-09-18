@@ -569,3 +569,5 @@ CREATE TABLE `cloud`.`direct_download_certificate_host_map` (
   CONSTRAINT `fk_direct_download_certificate_host_map__certificate_id` FOREIGN KEY (`certificate_id`) REFERENCES `direct_download_certificate` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- Add possibility for backup to s3 storage
+ALTER TABLE `cloud`.`snapshot_policy` ADD COLUMN `s3_backup` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'should also be saved to s3 storage default=false';
