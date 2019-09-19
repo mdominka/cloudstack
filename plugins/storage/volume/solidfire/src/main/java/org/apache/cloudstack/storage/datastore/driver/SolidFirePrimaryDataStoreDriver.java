@@ -100,7 +100,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final long MAX_IOPS_FOR_MIGRATING_VOLUME = 20000L;
     private static final long MIN_IOPS_FOR_SNAPSHOT_VOLUME = 100L;
     private static final long MAX_IOPS_FOR_SNAPSHOT_VOLUME = 20000L;
-    private static final int MAX_SNAPSHOTS = 32;
+    private static final int MAX_SNAPSHOTS = 40;
 
     private static final String BASIC_SF_ID = "basicSfId";
 
@@ -950,7 +950,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             snapshots.sort(Comparator.comparing(com.solidfire.element.api.Snapshot::getCreateTime));
             final long snapshotId = snapshots.get(0).getSnapshotID();
 
-            SolidFireUtil.deleteSnapshot(sfConnection, snapshotId);
+            //SolidFireUtil.deleteSnapshot(sfConnection, snapshotId);
             LOGGER.info("The maximum number of snapshots (" + MAX_SNAPSHOTS + ") for volume: (" + volumeId + ") has been reached."
                 + " Therefore, the oldest snapshot with ID: " + snapshotId + " was deleted.");
         }
