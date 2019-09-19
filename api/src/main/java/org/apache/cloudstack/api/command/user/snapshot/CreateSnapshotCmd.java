@@ -309,6 +309,10 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
         return s3Backup;
     }
 
+    public void setS3Backup (final boolean s3Backup){
+        this.s3Backup = s3Backup;
+    }
+
     protected String getVolumeUuid() {
         return _uuidMgr.getUuid(Volume.class, getVolumeId());
     }

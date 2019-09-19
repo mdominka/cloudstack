@@ -83,6 +83,7 @@ import org.apache.log4j.Logger;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,6 +100,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final long MAX_IOPS_FOR_MIGRATING_VOLUME = 20000L;
     private static final long MIN_IOPS_FOR_SNAPSHOT_VOLUME = 100L;
     private static final long MAX_IOPS_FOR_SNAPSHOT_VOLUME = 20000L;
+    private static final int MAX_SNAPSHOTS = 32;
 
     private static final String BASIC_SF_ID = "basicSfId";
 
@@ -887,6 +889,8 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     sfNewSnapshotName = StringUtils.left(volumeInfo.getName(), (volumeInfo.getName().length() - trimRequired)) + "-" + snapshotInfo.getUuid();
                 }
 
+                checkForMaxSnapshots(sfConnection, sfVolumeId);
+
                 final long sfNewSnapshotId = SolidFireUtil.createSnapshot(sfConnection, sfVolumeId,
                     SolidFireUtil.getSolidFireVolumeName(sfNewSnapshotName), getSnapshotAttributes(snapshotInfo));
 
@@ -937,6 +941,19 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         callback.complete(result);
+    }
+
+    private void checkForMaxSnapshots(final SolidFireUtil.SolidFireConnection sfConnection , final long volumeId) {
+        final List<com.solidfire.element.api.Snapshot> snapshots = SolidFireUtil.getSnapshotList(sfConnection, volumeId);
+
+        if (snapshots.size() >= MAX_SNAPSHOTS) {
+            snapshots.sort(Comparator.comparing(com.solidfire.element.api.Snapshot::getCreateTime));
+            final long snapshotId = snapshots.get(0).getSnapshotID();
+
+            SolidFireUtil.deleteSnapshot(sfConnection, snapshotId);
+            LOGGER.info("The maximum number of snapshots (" + MAX_SNAPSHOTS + ") for volume: (" + volumeId + ") has been reached."
+                + " Therefore, the oldest snapshot with ID: " + snapshotId + " was deleted.");
+        }
     }
 
     private void updateSnapshotDetails(long csSnapshotId, long csVolumeId, long sfVolumeId, long sfNewSnapshotId, long storagePoolId, long sfNewVolumeSize) {

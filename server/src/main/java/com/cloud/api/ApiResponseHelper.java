@@ -664,6 +664,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         policyResponse.setMaxSnaps(policy.getMaxSnaps());
         policyResponse.setTimezone(policy.getTimezone());
         policyResponse.setForDisplay(policy.isDisplay());
+        policyResponse.setS3Backup(policy.isS3backup());
         policyResponse.setObjectName("snapshotpolicy");
 
         List<? extends ResourceTag> tags = _resourceTagDao.listBy(policy.getId(), ResourceObjectType.SnapshotPolicy);

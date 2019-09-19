@@ -16,29 +16,6 @@
 // under the License.
 package com.cloud.storage.snapshot;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
-import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
-import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
-import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
-
 import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiGsonHelper;
 import com.cloud.event.ActionEventUtils;
@@ -70,6 +47,28 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 @Component
 public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotScheduler {
@@ -288,7 +287,8 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                     }
                     continue;
                 }
-                if (_snapshotPolicyDao.findById(policyId) == null) {
+                final SnapshotPolicyVO snapshotPolicy = _snapshotPolicyDao.findById(policyId);
+                if (Objects.isNull(snapshotPolicy)) {
                     _snapshotScheduleDao.remove(snapshotToBeExecuted.getId());
                 }
                 if (s_logger.isDebugEnabled()) {
@@ -321,6 +321,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
 
                 final CreateSnapshotCmd cmd = new CreateSnapshotCmd();
                 ComponentContext.inject(cmd);
+                cmd.setS3Backup(snapshotPolicy.isS3backup());
                 _dispatcher.dispatchCreateCmd(cmd, params);
                 params.put("id", "" + cmd.getEntityId());
                 params.put("ctxStartEventId", "1");

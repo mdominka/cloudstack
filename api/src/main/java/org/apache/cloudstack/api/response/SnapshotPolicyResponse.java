@@ -16,17 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-
+import com.cloud.serializer.Param;
+import com.cloud.storage.snapshot.SnapshotPolicy;
+import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponseWithTagInformation;
 import org.apache.cloudstack.api.EntityReference;
 
-import com.cloud.serializer.Param;
-import com.cloud.storage.snapshot.SnapshotPolicy;
-import com.google.gson.annotations.SerializedName;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @EntityReference(value = SnapshotPolicy.class)
 public class SnapshotPolicyResponse extends BaseResponseWithTagInformation {
@@ -57,6 +56,10 @@ public class SnapshotPolicyResponse extends BaseResponseWithTagInformation {
     @SerializedName(ApiConstants.FOR_DISPLAY)
     @Param(description = "is this policy for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
+
+    @SerializedName(ApiConstants.S3_BACKUP)
+    @Param(description = "backup to s3 storage")
+    private Boolean s3Backup;
 
     public SnapshotPolicyResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
@@ -120,5 +123,13 @@ public class SnapshotPolicyResponse extends BaseResponseWithTagInformation {
 
     public void setTags(Set<ResourceTagResponse> tags) {
         this.tags = tags;
+    }
+
+    public Boolean getS3Backup() {
+        return s3Backup;
+    }
+
+    public void setS3Backup(final Boolean s3Backup) {
+        this.s3Backup = s3Backup;
     }
 }
