@@ -1000,7 +1000,7 @@
                                                                     time: snapshot.intervaltype > 0 ? snapshot.schedule.split(':')[1] + ':' + snapshot.schedule.split(':')[0] : snapshot.schedule,
                                                                     timezone: snapshot.timezone,
                                                                     keep: snapshot.maxsnaps,
-                                                                    s3backup: snapshot.s3Backup,
+                                                                    s3Backup: snapshot.s3Backup === 'on',
                                                                     'day-of-week': snapshot.intervaltype == 2 ? snapshot.schedule.split(':')[2] : null,
                                                                     'day-of-month': snapshot.intervaltype == 3 ? snapshot.schedule.split(':')[2] : null
                                                                 };
@@ -1018,9 +1018,10 @@
                                                     volumeid: args.context.volumes[0].id,
                                                     intervaltype: snap['snapshot-type'],
                                                     maxsnaps: snap.maxsnaps,
-                                                    s3backup: snap.s3backup,
+                                                    s3Backup: snap.s3Backup === 'on',
                                                     timezone: snap.timezone
                                                 };
+                                                console.log(data);
 
                                                 var convertTime = function(minute, hour, meridiem, extra) {
                                                     var convertedHour = meridiem == 'PM' ?
@@ -1095,7 +1096,7 @@
                                                                 time: snapshot.intervaltype > 0 ? snapshot.schedule.split(':')[1] + ':' + snapshot.schedule.split(':')[0] : snapshot.schedule,
                                                                 timezone: snapshot.timezone,
                                                                 keep: snapshot.maxsnaps,
-                                                                s3backup: snapshot.s3backup,
+                                                                s3Backup: snapshot.s3Backup === 'on',
                                                                 'day-of-week': snapshot.intervaltype == 2 ? snapshot.schedule.split(':')[2] : null,
                                                                 'day-of-month': snapshot.intervaltype == 3 ? snapshot.schedule.split(':')[2] : null
                                                             }

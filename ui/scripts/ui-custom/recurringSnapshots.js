@@ -102,6 +102,7 @@
                                 }).html()
                             );
                             $snapshotRow.find('td.keep span').html(args.data.keep);
+                            $snapshotRow.find('td.s3backup span').html(args.data.s3backup);
 
                             $(':ui-dialog').dialog('option', 'position', 'center');
 
@@ -185,6 +186,7 @@
                                 }).html() :
                                 snapshot['day-of-month']
                             );
+                            $tr.find('td.s3backup span').html(snapshot.s3backup);
                         });
 
                         refreshSnapshotTabs();
