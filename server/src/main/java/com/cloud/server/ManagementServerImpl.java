@@ -37,8 +37,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.ScopeType;
-import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -446,6 +444,7 @@ import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.ListTemplateOVFProperties;
 import org.apache.cloudstack.api.command.user.template.ListTemplatePermissionsCmd;
 import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
@@ -536,6 +535,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.GuestOsDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
@@ -556,7 +556,6 @@ import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.QueryManagerImpl;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -613,6 +612,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
+import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.IpAddress;
 import com.cloud.network.dao.IPAddressDao;
@@ -639,6 +639,7 @@ import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -1442,7 +1443,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         StoragePool srcVolumePool = _poolDao.findById(volume.getPoolId());
         allPools = getAllStoragePoolCompatileWithVolumeSourceStoragePool(srcVolumePool);
         allPools.remove(srcVolumePool);
-        suitablePools = findAllSuitableStoragePoolsForVm(volume, vm, srcVolumePool);
+        if (vm != null) {
+            suitablePools = findAllSuitableStoragePoolsForVm(volume, vm, srcVolumePool);
+        } else {
+            suitablePools = allPools;
+        }
 
         return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
     }
@@ -3106,6 +3111,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(RevokeTemplateDirectDownloadCertificateCmd.class);
         cmdList.add(ListMgmtsCmd.class);
         cmdList.add(GetUploadParamsForIsoCmd.class);
+        cmdList.add(ListTemplateOVFProperties.class);
 
         // Out-of-band management APIs for admins
         cmdList.add(EnableOutOfBandManagementForHostCmd.class);
@@ -3488,8 +3494,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Integer apiLimitInterval = Integer.valueOf(_configDao.getValue(Config.ApiLimitInterval.key()));
         final Integer apiLimitMax = Integer.valueOf(_configDao.getValue(Config.ApiLimitMax.key()));
 
-        final boolean allowUserViewDestroyedVM = (QueryManagerImpl.AllowUserViewDestroyedVM.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
+        final boolean allowUserViewDestroyedVM = (QueryService.AllowUserViewDestroyedVM.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
         final boolean allowUserExpungeRecoverVM = (UserVmManager.AllowUserExpungeRecoverVm.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
+
+        final boolean allowUserViewAllDomainAccounts = (QueryService.AllowUserViewAllDomainAccounts.valueIn(caller.getDomainId()));
 
         // check if region-wide secondary storage is used
         boolean regionSecondaryEnabled = false;
@@ -3510,6 +3518,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("KVMSnapshotEnabled", KVMSnapshotEnabled);
         capabilities.put("allowUserViewDestroyedVM", allowUserViewDestroyedVM);
         capabilities.put("allowUserExpungeRecoverVM", allowUserExpungeRecoverVM);
+        capabilities.put("allowUserViewAllDomainAccounts", allowUserViewAllDomainAccounts);
         if (apiLimitEnabled) {
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);

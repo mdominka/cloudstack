@@ -18,7 +18,6 @@ package com.cloud.api.query.dao;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
-import com.cloud.api.query.QueryManagerImpl;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.gpu.GPU;
 import com.cloud.service.ServiceOfferingDetailsVO;
@@ -31,12 +30,14 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.NicExtraDhcpOptionResponse;
@@ -45,6 +46,7 @@ import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -311,18 +313,21 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         if (vmDetails != null) {
             Map<String, String> resourceDetails = new HashMap<String, String>();
             for (UserVmDetailVO userVmDetailVO : vmDetails) {
-                resourceDetails.put(userVmDetailVO.getName(), userVmDetailVO.getValue());
+                if (!userVmDetailVO.getName().startsWith(ApiConstants.OVF_PROPERTIES) ||
+                        (UserVmManager.DisplayVMOVFProperties.value() && userVmDetailVO.getName().startsWith(ApiConstants.OVF_PROPERTIES))) {
+                    resourceDetails.put(userVmDetailVO.getName(), userVmDetailVO.getValue());
+                }
             }
             // Remove blacklisted settings if user is not admin
             if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                String[] userVmSettingsToHide = QueryManagerImpl.UserVMBlacklistedDetails.value().split(",");
+                String[] userVmSettingsToHide = QueryService.UserVMBlacklistedDetails.value().split(",");
                 for (String key : userVmSettingsToHide) {
                     resourceDetails.remove(key.trim());
                 }
             }
             userVmResponse.setDetails(resourceDetails);
             if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                userVmResponse.setReadOnlyUIDetails(QueryManagerImpl.UserVMReadOnlyUIDetails.value());
+                userVmResponse.setReadOnlyUIDetails(QueryService.UserVMReadOnlyUIDetails.value());
             }
         }
 

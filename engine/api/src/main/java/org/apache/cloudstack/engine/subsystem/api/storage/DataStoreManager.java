@@ -35,7 +35,11 @@ public interface DataStoreManager {
 
     List<DataStore> getImageStoresByScope(ZoneScope scope);
 
-    DataStore getImageStore(long zoneId);
+    DataStore getRandomImageStore(long zoneId);
+
+    DataStore getImageStoreWithFreeCapacity(long zoneId);
+
+    List<DataStore> listImageStoresWithFreeCapacity(long zoneId);
 
     List<DataStore> getImageCacheStores(Scope scope);
 

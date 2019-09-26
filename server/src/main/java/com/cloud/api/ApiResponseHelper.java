@@ -187,6 +187,8 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -373,6 +375,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     private IPAddressDao userIpAddressDao;
     @Inject
     NetworkDetailsDao networkDetailsDao;
+    @Inject
+    private VMSnapshotDao vmSnapshotDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -1818,6 +1822,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<String> regularAccounts = new ArrayList<String>();
         for (String accountName : accountNames) {
             Account account = ApiDBUtils.findAccountByNameDomain(accountName, templateOwner.getDomainId());
+            if (account == null) {
+                s_logger.error("Missing Account " + accountName + " in domain " + templateOwner.getDomainId());
+                continue;
+            }
+
             if (account.getType() != Account.ACCOUNT_TYPE_PROJECT) {
                 regularAccounts.add(accountName);
             } else {
@@ -3378,7 +3387,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                     builder.append("Allocated VM usage ");
                 }
                 if (vm != null) {
-                    builder.append("for ").append(vm.getHostName()).append(" (").append(vm.getInstanceName()).append(", ").append(vm.getUuid()).append(") ");
+                    builder.append("for ").append(vm.getHostName()).append(" (").append(vm.getInstanceName()).append(") (").append(vm.getUuid()).append(") ");
                 }
                 if (svcOffering != null) {
                     builder.append("using service offering ").append(svcOffering.getName()).append(" (").append(svcOffering.getUuid()).append(") ");
@@ -3648,24 +3657,35 @@ public class ApiResponseHelper implements ResponseGenerator {
                 usageRecResponse.setDescription(builder.toString());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT) {
-            resourceType = ResourceObjectType.UserVm;
-            if (vmInstance != null) {
-                resourceId = vmInstance.getId();
-                usageRecResponse.setResourceName(vmInstance.getInstanceName());
-                usageRecResponse.setUsageId(vmInstance.getUuid());
+            resourceType = ResourceObjectType.VMSnapshot;
+            VMSnapshotVO vmSnapshotVO = null;
+            if (usageRecord.getUsageId() != null) {
+                vmSnapshotVO = vmSnapshotDao.findByIdIncludingRemoved(usageRecord.getUsageId());
+                if (vmSnapshotVO != null) {
+                    resourceId = vmSnapshotVO.getId();
+                    usageRecResponse.setResourceName(vmSnapshotVO.getDisplayName());
+                    usageRecResponse.setUsageId(vmSnapshotVO.getUuid());
+                }
             }
             usageRecResponse.setSize(usageRecord.getSize());
             if (usageRecord.getOfferingId() != null) {
                 usageRecResponse.setOfferingId(usageRecord.getOfferingId().toString());
             }
             if (!oldFormat) {
-                VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
+                VolumeVO volume = null;
+                if (vmSnapshotVO == null && usageRecord.getUsageId() != null) {
+                     volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
+                }
+
                 DiskOfferingVO diskOff = null;
                 if (usageRecord.getOfferingId() != null) {
                     diskOff = _entityMgr.findByIdIncludingRemoved(DiskOfferingVO.class, usageRecord.getOfferingId());
                 }
                 final StringBuilder builder = new StringBuilder();
                 builder.append("VMSnapshot usage");
+                if (vmSnapshotVO != null) {
+                    builder.append(" Id: ").append(vmSnapshotVO.getId()).append(" (").append(vmSnapshotVO.getUuid()).append(") ");
+                }
                 if (vmInstance != null) {
                     builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
                 }
@@ -3689,9 +3709,23 @@ public class ApiResponseHelper implements ResponseGenerator {
                 usageRecResponse.setDescription(builder.toString());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT_ON_PRIMARY) {
+            resourceType = ResourceObjectType.VMSnapshot;
+            VMSnapshotVO vmSnapshotVO = null;
+            if (usageRecord.getUsageId() != null) {
+                vmSnapshotVO = vmSnapshotDao.findByIdIncludingRemoved(usageRecord.getUsageId());
+                if (vmSnapshotVO != null) {
+                    resourceId = vmSnapshotVO.getId();
+                    usageRecResponse.setResourceName(vmSnapshotVO.getDisplayName());
+                    usageRecResponse.setUsageId(vmSnapshotVO.getUuid());
+                }
+            }
+            usageRecResponse.setSize(usageRecord.getVirtualSize());
             if (!oldFormat) {
                 final StringBuilder builder = new StringBuilder();
                 builder.append("VMSnapshot on primary storage usage");
+                if (vmSnapshotVO != null) {
+                    builder.append(" Id: ").append(vmSnapshotVO.getId()).append(" (").append(vmSnapshotVO.getUuid()).append(") ");
+                }
                 if (vmInstance != null) {
                     builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(") ")
                             .append("with size ").append(usageRecord.getVirtualSize());

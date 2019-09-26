@@ -31,6 +31,9 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.storage.OVFProperty;
+import com.cloud.storage.TemplateOVFPropertyVO;
+import com.cloud.storage.dao.TemplateOVFPropertiesDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -70,6 +73,7 @@ import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
 import org.apache.cloudstack.api.command.user.resource.ListDetailOptionsCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
+import org.apache.cloudstack.api.command.user.template.ListTemplateOVFProperties;
 import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
@@ -98,6 +102,7 @@ import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.StorageTagResponse;
+import org.apache.cloudstack.api.response.TemplateOVFPropertyResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -387,6 +392,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Inject
     ManagementServerHostDao managementServerHostDao;
 
+    @Inject
+    TemplateOVFPropertiesDao templateOVFPropertiesDao;
+
     /*
      * (non-Javadoc)
      *
@@ -394,6 +402,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
      * com.cloud.api.query.QueryService#searchForUsers(org.apache.cloudstack
      * .api.command.admin.user.ListUsersCmd)
      */
+
     @Override
     public ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
         Pair<List<UserAccountJoinVO>, Integer> result = searchForUsersInternal(cmd);
@@ -1680,11 +1689,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Pair<List<VolumeJoinVO>, Integer> result = searchForVolumesInternal(cmd);
         ListResponse<VolumeResponse> response = new ListResponse<VolumeResponse>();
 
-        ResponseView respView = ResponseView.Restricted;
-        Account account = CallContext.current().getCallingAccount();
-        if (_accountMgr.isAdmin(account.getAccountId())) {
-            respView = ResponseView.Full;
-        }
+        ResponseView respView = cmd.getResponseView();
 
         List<VolumeResponse> volumeResponses = ViewResponseHelper.createVolumeResponse(respView, result.first().toArray(new VolumeJoinVO[result.first().size()]));
 
@@ -1980,7 +1985,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // if no "id" specified...
         if (accountId == null) {
             // listall only has significance if they are an admin
-            if (listAll && callerIsAdmin) {
+            boolean isDomainListAllAllowed = AllowUserViewAllDomainAccounts.valueIn(caller.getDomainId());
+            if ((listAll && callerIsAdmin) || isDomainListAllAllowed) {
                 // if no domain id specified, use caller's domain
                 if (domainId == null) {
                     domainId = caller.getDomainId();
@@ -2026,6 +2032,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("needsCleanup", sb.entity().isNeedsCleanup(), SearchCriteria.Op.EQ);
         sb.and("typeNEQ", sb.entity().getType(), SearchCriteria.Op.NEQ);
         sb.and("idNEQ", sb.entity().getId(), SearchCriteria.Op.NEQ);
+        sb.and("type2NEQ", sb.entity().getType(), SearchCriteria.Op.NEQ);
 
         if (domainId != null && isRecursive) {
             sb.and("path", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
@@ -2035,8 +2042,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         // don't return account of type project to the end user
         sc.setParameters("typeNEQ", Account.ACCOUNT_TYPE_PROJECT);
+
         // don't return system account...
         sc.setParameters("idNEQ", Account.ACCOUNT_ID_SYSTEM);
+
+        // do not return account of type domain admin to the end user
+        if (!callerIsAdmin) {
+            sc.setParameters("type2NEQ", Account.ACCOUNT_TYPE_DOMAIN_ADMIN);
+        }
 
         if (keyword != null) {
             SearchCriteria<AccountJoinVO> ssc = _accountJoinDao.createSearchCriteria();
@@ -3830,12 +3843,35 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     @Override
+    public ListResponse<TemplateOVFPropertyResponse> listTemplateOVFProperties(ListTemplateOVFProperties cmd) {
+        ListResponse<TemplateOVFPropertyResponse> response = new ListResponse<>();
+        List<TemplateOVFPropertyResponse> result = new ArrayList<>();
+        Long templateId = cmd.getTemplateId();
+        List<TemplateOVFPropertyVO> ovfProperties = templateOVFPropertiesDao.listByTemplateId(templateId);
+        for (OVFProperty property : ovfProperties) {
+            TemplateOVFPropertyResponse propertyResponse = new TemplateOVFPropertyResponse();
+            propertyResponse.setKey(property.getKey());
+            propertyResponse.setType(property.getType());
+            propertyResponse.setValue(property.getValue());
+            propertyResponse.setQualifiers(property.getQualifiers());
+            propertyResponse.setUserConfigurable(property.isUserConfigurable());
+            propertyResponse.setLabel(property.getLabel());
+            propertyResponse.setDescription(property.getDescription());
+            propertyResponse.setPassword(property.isPassword());
+            propertyResponse.setObjectName("ovfproperty");
+            result.add(propertyResponse);
+        }
+        response.setResponses(result);
+        return response;
+    }
+
+    @Override
     public String getConfigComponentName() {
         return QueryService.class.getSimpleName();
     }
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowUserViewDestroyedVM, UserVMBlacklistedDetails, UserVMReadOnlyUIDetails, SortKeyAscending};
+        return new ConfigKey<?>[] {AllowUserViewDestroyedVM, UserVMBlacklistedDetails, UserVMReadOnlyUIDetails, SortKeyAscending, AllowUserViewAllDomainAccounts};
     }
 }

@@ -52,6 +52,7 @@ import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
@@ -1264,7 +1265,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
     }
 
-    private static DataStoreRole getDataStoreRole(Snapshot snapshot, SnapshotDataStoreDao snapshotStoreDao, DataStoreManager dataStoreMgr) {
+    private DataStoreRole getDataStoreRole(Snapshot snapshot, SnapshotDataStoreDao snapshotStoreDao, DataStoreManager dataStoreMgr) {
         SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
 
         if (snapshotStore == null) {
@@ -1283,6 +1284,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             if (supportsStorageSystemSnapshots) {
                 return DataStoreRole.Primary;
             }
+        }
+
+        StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
+        if (storagePoolVO.getPoolType() == StoragePoolType.RBD && !BackupSnapshotAfterTakingSnapshot.value()) {
+            return DataStoreRole.Primary;
         }
 
         return DataStoreRole.Image;

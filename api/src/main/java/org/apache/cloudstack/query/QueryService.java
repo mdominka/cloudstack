@@ -43,6 +43,7 @@ import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
 import org.apache.cloudstack.api.command.user.resource.ListDetailOptionsCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
+import org.apache.cloudstack.api.command.user.template.ListTemplateOVFProperties;
 import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
@@ -71,6 +72,7 @@ import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.StorageTagResponse;
+import org.apache.cloudstack.api.response.TemplateOVFPropertyResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -92,7 +94,7 @@ public interface QueryService {
 
     static final ConfigKey<String> UserVMBlacklistedDetails = new ConfigKey<String>("Advanced", String.class,
             "user.vm.blacklisted.details", "rootdisksize, cpuOvercommitRatio, memoryOvercommitRatio, Message.ReservedCapacityFreed.Flag",
-            "Determines whether users can view certain VM settings", true);
+            "Determines whether users can view certain VM settings. When set to empty, default value used is: rootdisksize, cpuOvercommitRatio, memoryOvercommitRatio, Message.ReservedCapacityFreed.Flag.", true);
 
     static final ConfigKey<String> UserVMReadOnlyUIDetails = new ConfigKey<String>("Advanced", String.class,
             "user.vm.readonly.ui.details", "dataDiskController, rootDiskController",
@@ -102,6 +104,10 @@ public interface QueryService {
             "Sort algorithm - ascending or descending - to use. For entities that use sort key(template, disk offering, service offering, " +
                     "network offering, zones), we use the flag to determine if the entities should be sorted ascending (when flag is true) " +
                     "or descending (when flag is false). Within the scope of the config all users see the same result.", true, ConfigKey.Scope.Global);
+
+    public static final ConfigKey<Boolean> AllowUserViewAllDomainAccounts = new ConfigKey<>("Advanced", Boolean.class,
+            "allow.user.view.all.domain.accounts", "false",
+            "Determines whether users can view all user accounts within the same domain", true, ConfigKey.Scope.Domain);
 
     ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException;
 
@@ -162,4 +168,6 @@ public interface QueryService {
     ListResponse<HostTagResponse> searchForHostTags(ListHostTagsCmd cmd);
 
     ListResponse<ManagementServerResponse> listManagementServers(ListMgmtsCmd cmd);
+
+    ListResponse<TemplateOVFPropertyResponse> listTemplateOVFProperties(ListTemplateOVFProperties cmd);
 }

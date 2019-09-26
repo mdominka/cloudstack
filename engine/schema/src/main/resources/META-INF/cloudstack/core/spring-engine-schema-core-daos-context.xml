@@ -287,6 +287,7 @@
   <bean id="annotationDaoImpl" class="org.apache.cloudstack.annotation.dao.AnnotationDaoImpl" />
   <bean id="directDownloadCertificateDaoImpl" class="org.apache.cloudstack.direct.download.DirectDownloadCertificateDaoImpl" />
   <bean id="directDownloadCertificateHostMapDaoImpl" class="org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMapDaoImpl" />
+  <bean id="templateOVFPropertiesDaoImpl" class="com.cloud.storage.dao.TemplateOVFPropertiesDaoImpl" />
   <bean id="backupManagerImpl" class="com.cloud.vm.snapshot.BackupManagerImpl" />
   <bean id="backupConfigurationDaoImpl" class="com.cloud.vm.snapshot.dao.BackupConfigurationDaoImpl" />
   <bean id="backupConfiguration" class="com.cloud.vm.snapshot.BackupConfiguration" />
