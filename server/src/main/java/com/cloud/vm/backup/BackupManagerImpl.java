@@ -17,62 +17,82 @@
 
 package com.cloud.vm.backup;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.cloud.agent.api.to.S3TO;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.storage.S3.S3Utils;
+import com.cloud.vm.snapshot.BackupConfigurationVO;
+import com.cloud.vm.snapshot.crypto.Aes;
+import com.cloud.vm.snapshot.dao.BackupConfigurationDao;
+import org.apache.cloudstack.api.command.user.backup.ListBackupCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.springframework.stereotype.Component;
-import org.apache.cloudstack.api.command.user.backup.ListBackupCmd;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.s3.model.ListObjectsRequest;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.Protocol;
-
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 import javax.inject.Inject;
 
 @Component
 public class BackupManagerImpl extends ManagerBase implements BackupService {
 
+    private static final String CLUSTER_PREFIX = "hci-cl01-nhjj/";
+
     @Inject
     DataStoreManager _dataStoreMgr;
+    @Inject
+    private BackupConfigurationDao backupConfigurationDao;
 
     @Override
     public List<S3ObjectSummary> listBackups(ListBackupCmd cmd) {
         List<PrimaryDataStore> stores =_dataStoreMgr.listPrimaryDataStores();
-        String accessKey = "accessKey1";
-        String secretKey = "verySecretKey1";
-        AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
 
-        ClientConfiguration clientConfig = new ClientConfiguration();
-        clientConfig.setProtocol(Protocol.HTTPS);
+        final BackupConfigurationVO config = backupConfigurationDao.listAll().get(0);
 
-        AmazonS3 conn = new AmazonS3Client(credentials, clientConfig);
-        conn.setEndpoint("sr03.cs.ewerk.com");
-
-        String prefix = "hci-cl01-nhjj";
-
-        String delimiter = "/";
-        if (!prefix.endsWith(delimiter)) {
-          prefix += delimiter;
+        if (Objects.isNull(config)){
+            return new ArrayList<>();
         }
+        final S3TO s3TO = new S3TO();
+        s3TO.setSecretKey(Aes.decrypt(config.getSecretKey()));
+        s3TO.setAccessKey(config.getAccessKey());
+        s3TO.setEndPoint(config.getEndpoint());
+        s3TO.setBucketName(config.getBucket());
+        s3TO.setHttps(true);
 
-        ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
-            .withBucketName("zenko").withPrefix(prefix)
-            .withDelimiter(delimiter);
+        final List<S3ObjectSummary> s3Objects =
+            S3Utils.listDirectory(s3TO, config.getBucket(), CLUSTER_PREFIX);
 
-        ObjectListing objects = conn.listObjects(listObjectsRequest);
-        List<S3ObjectSummary> myList = new ArrayList<S3ObjectSummary>();
+        return s3Objects;
 
-        myList.addAll(objects.getObjectSummaries());
-
-        return myList;
+//        String accessKey = "accessKey1";
+//        String secretKey = "verySecretKey1";
+//        AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
+//
+//        ClientConfiguration clientConfig = new ClientConfiguration();
+//        clientConfig.setProtocol(Protocol.HTTPS);
+//
+//        AmazonS3 conn = new AmazonS3Client(credentials, clientConfig);
+//        conn.setEndpoint("sr03.cs.ewerk.com");
+//
+//        String prefix = "hci-cl01-nhjj";
+//
+//        String delimiter = "/";
+//        if (!prefix.endsWith(delimiter)) {
+//          prefix += delimiter;
+//        }
+//
+//
+//        ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
+//            .withBucketName("zenko").withPrefix(prefix)
+//            .withDelimiter(delimiter);
+//
+//        ObjectListing objects = conn.listObjects(listObjectsRequest);
+//        List<S3ObjectSummary> myList = new ArrayList<S3ObjectSummary>();
+//
+//        myList.addAll(objects.getObjectSummaries());
+//
+//        return myList;
     }
 }

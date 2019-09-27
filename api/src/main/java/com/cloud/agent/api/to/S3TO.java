@@ -16,12 +16,12 @@
 // under the License.
 package com.cloud.agent.api.to;
 
-import java.util.Date;
-
 import com.cloud.agent.api.LogLevel;
 import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.storage.S3.ClientOptions;
+
+import java.util.Date;
 
 public final class S3TO implements ClientOptions, DataStoreTO {
 
@@ -44,6 +44,8 @@ public final class S3TO implements ClientOptions, DataStoreTO {
     private boolean enableRRS;
     private long maxSingleUploadSizeInBytes;
     private static final String pathSeparator = "/";
+
+    public S3TO(){}
 
     public S3TO(final Long id, final String uuid, final String accessKey, final String secretKey, final String endPoint, final String bucketName,
             final String signer, final Boolean httpsFlag, final Integer connectionTimeout, final Integer maxErrorRetry, final Integer socketTimeout,
