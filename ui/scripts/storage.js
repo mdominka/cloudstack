@@ -1021,7 +1021,6 @@
                                                     s3Backup: snap.s3Backup === 'on',
                                                     timezone: snap.timezone
                                                 };
-                                                console.log(data);
 
                                                 var convertTime = function(minute, hour, meridiem, extra) {
                                                     var convertedHour = meridiem == 'PM' ?

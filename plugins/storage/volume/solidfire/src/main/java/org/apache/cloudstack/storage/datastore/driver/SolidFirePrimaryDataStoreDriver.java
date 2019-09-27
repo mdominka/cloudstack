@@ -29,6 +29,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ResizeVolumePayload;
+import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.State;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -893,7 +894,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 final long sfNewSnapshotId = SolidFireUtil.createSnapshot(sfConnection, sfVolumeId,
                     SolidFireUtil.getSolidFireVolumeName(sfNewSnapshotName), getSnapshotAttributes(snapshotInfo));
 
-                if (snapshotInfo.getLocationType().name().equals("CUSTOMTARGET")) {
+                if (snapshotInfo.getLocationType().equals(Snapshot.LocationType.CUSTOMTARGET)) {
                     final List<BackupConfigurationVO> s3config = backupConfigurationDao.listAll();
                     if (!s3config.isEmpty()) {
                         SolidFireUtil.startBulkVolumeRead(sfNewSnapshotId, sfConnection, sfVolumeId,
