@@ -78,7 +78,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
         clientConfig.setProtocol(Protocol.HTTPS);
 
         final AmazonS3 amazonS3 = AmazonS3Client.builder()
-            .withRegion(Regions.EU_CENTRAL_1)
             .withCredentials(new AWSStaticCredentialsProvider(credentials))
             .withClientConfiguration(clientConfig)
             .withEndpointConfiguration(
