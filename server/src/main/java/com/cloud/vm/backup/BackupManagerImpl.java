@@ -22,6 +22,7 @@ import com.amazonaws.Protocol;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
@@ -80,9 +81,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
             .withRegion(Regions.EU_CENTRAL_1)
             .withCredentials(new AWSStaticCredentialsProvider(credentials))
             .withClientConfiguration(clientConfig)
+            .withEndpointConfiguration(
+                new AwsClientBuilder.EndpointConfiguration(config.getEndpoint(),
+                    Regions.EU_CENTRAL_1.getName()))
             .build();
-
-        amazonS3.setEndpoint(config.getEndpoint());
 
         final ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
             .withBucketName(config.getBucket())
