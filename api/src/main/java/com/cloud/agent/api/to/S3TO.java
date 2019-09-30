@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.agent.api.to;
 
+import com.amazonaws.regions.Regions;
 import com.cloud.agent.api.LogLevel;
 import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.storage.DataStoreRole;
@@ -44,6 +45,7 @@ public final class S3TO implements ClientOptions, DataStoreTO {
     private boolean enableRRS;
     private long maxSingleUploadSizeInBytes;
     private static final String pathSeparator = "/";
+    private String region = Regions.DEFAULT_REGION.getName();
 
     public S3TO(){}
 
@@ -113,6 +115,15 @@ public final class S3TO implements ClientOptions, DataStoreTO {
     @Override
     public String getEndPoint() {
         return this.endPoint;
+    }
+
+    @Override
+    public String getRegion() {
+        return this.region;
+    }
+
+    public void setRegion(final String region) {
+        this.region = region;
     }
 
     public void setEndPoint(final String endPoint) {

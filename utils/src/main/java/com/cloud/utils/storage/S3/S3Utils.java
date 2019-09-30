@@ -31,6 +31,7 @@ import com.amazonaws.HttpMethod;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.GetObjectRequest;
@@ -110,16 +111,8 @@ public final class S3Utils {
                 configuration.getProtocol(), configuration.getSignerOverride(), configuration.getConnectionTimeout(), configuration.getMaxErrorRetry(), configuration.getSocketTimeout(),
                 clientOptions.getUseTCPKeepAlive(), clientOptions.getConnectionTtl()));
 
-        final AmazonS3 client = AmazonS3ClientBuilder.standard()
-            .withCredentials(new AWSStaticCredentialsProvider(basicAWSCredentials))
-            .withClientConfiguration(configuration)
-            .build();
-
-        if (isNotBlank(clientOptions.getEndPoint())) {
-            LOGGER.debug(format("Setting the end point for S3 client with access key %1$s to %2$s.", clientOptions.getAccessKey(), clientOptions.getEndPoint()));
-
-            client.setEndpoint(clientOptions.getEndPoint());
-        }
+        final AmazonS3 client = buildAmazonS3Client(basicAWSCredentials, configuration,
+            clientOptions);
 
         final TransferManager transferManager = TransferManagerBuilder.standard()
             .withS3Client(client)
@@ -129,6 +122,26 @@ public final class S3Utils {
         TRANSFERMANAGER_ACCESSKEY_MAP.put(clientOptions.getAccessKey(), transferManager);
 
         return TRANSFERMANAGER_ACCESSKEY_MAP.get(clientOptions.getAccessKey());
+    }
+
+    private static AmazonS3 buildAmazonS3Client(final AWSCredentials basicAWSCredentials,
+        final ClientConfiguration configuration, final ClientOptions clientOptions){
+
+        if (isNotBlank(clientOptions.getEndPoint())){
+            LOGGER.debug(format("Setting the end point for S3 client with access key %1$s to %2$s.",
+                clientOptions.getAccessKey(), clientOptions.getEndPoint()));
+
+            return AmazonS3ClientBuilder.standard()
+                .withCredentials(new AWSStaticCredentialsProvider(basicAWSCredentials))
+                .withClientConfiguration(configuration)
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+                    clientOptions.getEndPoint(), clientOptions.getRegion()))
+                .build();
+        }
+        return AmazonS3ClientBuilder.standard()
+            .withCredentials(new AWSStaticCredentialsProvider(basicAWSCredentials))
+            .withClientConfiguration(configuration)
+            .build();
     }
 
     public static AmazonS3 getAmazonS3Client(final ClientOptions clientOptions) {

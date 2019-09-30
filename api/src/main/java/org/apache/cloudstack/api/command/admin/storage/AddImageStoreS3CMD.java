@@ -26,27 +26,13 @@ import static org.apache.cloudstack.api.ApiConstants.S3_CONNECTION_TTL;
 import static org.apache.cloudstack.api.ApiConstants.S3_END_POINT;
 import static org.apache.cloudstack.api.ApiConstants.S3_HTTPS_FLAG;
 import static org.apache.cloudstack.api.ApiConstants.S3_MAX_ERROR_RETRY;
-import static org.apache.cloudstack.api.ApiConstants.S3_SIGNER;
 import static org.apache.cloudstack.api.ApiConstants.S3_SECRET_KEY;
+import static org.apache.cloudstack.api.ApiConstants.S3_SIGNER;
 import static org.apache.cloudstack.api.ApiConstants.S3_SOCKET_TIMEOUT;
 import static org.apache.cloudstack.api.ApiConstants.S3_USE_TCP_KEEPALIVE;
 import static org.apache.cloudstack.api.BaseCmd.CommandType.BOOLEAN;
 import static org.apache.cloudstack.api.BaseCmd.CommandType.INTEGER;
 import static org.apache.cloudstack.api.BaseCmd.CommandType.STRING;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import com.cloud.utils.storage.S3.ClientOptions;
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.ImageStoreResponse;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.DiscoveryException;
@@ -55,6 +41,18 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.ImageStore;
+import com.cloud.utils.storage.S3.ClientOptions;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
+import org.apache.log4j.Logger;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @APICommand(name = "addImageStoreS3", description = "Adds S3 Image Store", responseObject = ImageStoreResponse.class, since = "4.7.0",
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
@@ -156,46 +154,61 @@ public final class AddImageStoreS3CMD extends BaseCmd implements ClientOptions {
         return ACCOUNT_ID_SYSTEM;
     }
 
+    @Override
     public String getAccessKey() {
         return accessKey;
     }
 
+    @Override
     public String getSecretKey() {
         return secretKey;
     }
 
+    @Override
     public String getEndPoint() {
         return endPoint;
+    }
+
+    @Override
+    public String getRegion() {
+        return null;
     }
 
     public String getBucketName() {
         return bucketName;
     }
 
+    @Override
     public String getSigner() {
         return signer;
     }
 
+    @Override
     public Boolean isHttps() {
         return httpsFlag;
     }
 
+    @Override
     public Integer getConnectionTimeout() {
         return connectionTimeout;
     }
 
+    @Override
     public Integer getMaxErrorRetry() {
         return maxErrorRetry;
     }
 
+    @Override
     public Integer getSocketTimeout() {
         return socketTimeout;
     }
 
+    @Override
     public Integer getConnectionTtl() {
         return connectionTtl;
     }
 
+    @Override
     public Boolean getUseTCPKeepAlive() {
         return useTCPKeepAlive;
     }

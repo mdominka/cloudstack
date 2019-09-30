@@ -70,6 +70,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
         s3TO.setEndPoint(config.getEndpoint());
         s3TO.setBucketName(config.getBucket());
         s3TO.setHttps(true);
+        s3TO.setRegion(Regions.EU_CENTRAL_1.getName());
 
         final AWSCredentials credentials = new BasicAWSCredentials(config.getAccessKey(),
             Aes.decrypt(config.getSecretKey()));
@@ -93,6 +94,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
 
         final List<S3ObjectSummary> s3Objects = new ArrayList<>(objects.getObjectSummaries());
 
+// ToDo: reactivate this if tests ok
 //        final List<S3ObjectSummary> s3Objects =
 //            S3Utils.listDirectory(s3TO, config.getBucket(), CLUSTER_PREFIX);
 

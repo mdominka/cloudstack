@@ -26,6 +26,8 @@ public interface ClientOptions {
 
     String getEndPoint();
 
+    String getRegion();
+
     String getSigner();
 
     Boolean isHttps();
