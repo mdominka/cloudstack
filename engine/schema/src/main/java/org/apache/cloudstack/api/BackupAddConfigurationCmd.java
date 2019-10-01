@@ -44,6 +44,9 @@ public class BackupAddConfigurationCmd extends BaseCmd {
     @Parameter(name = ApiConstants.S3_SECRET_KEY, type = CommandType.STRING, required = true, description = "Secretkey")
     private String secretKey;
 
+    @Parameter(name = ApiConstants.S3_REGION, type = CommandType.STRING, required = true, description = "Region")
+    private String region;
+
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Description")
     private String description;
 
@@ -58,7 +61,7 @@ public class BackupAddConfigurationCmd extends BaseCmd {
     public void execute() throws ServerApiException {
         try {
             final BackupConfigurationResponse response = _backupManager.addConfiguration(bucket,
-                endpoint, accessKey, secretKey, description);
+                endpoint, accessKey, secretKey, region, description);
             response.setObjectName("BackupAddConfiguration");
             response.setResponseName(getCommandName());
             setResponseObject(response);
@@ -115,5 +118,13 @@ public class BackupAddConfigurationCmd extends BaseCmd {
 
     public void setDescription(final String description) {
         this.description = description;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(final String region) {
+        this.region = region;
     }
 }

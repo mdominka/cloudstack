@@ -30,7 +30,7 @@ public interface BackupManager extends PluggableService {
       BackupConfigurationVO configuration);
 
   BackupConfigurationResponse addConfiguration(String bucket, String endpoint, String accessKey,
-      String secretKey, String description)
+      String secretKey, String region, String description)
       throws InvalidParameterValueException;
 
   BackupConfigurationResponse deleteConfiguration(BackupDeleteConfigurationCmd cmd)

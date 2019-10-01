@@ -38,6 +38,10 @@ public class BackupConfigurationResponse extends BaseResponse {
     @Param(description = "secret key of the backup configuration")
     private String secretKey;
 
+    @SerializedName(ApiConstants.S3_REGION)
+    @Param(description = "region of the backup configuration")
+    private String region;
+
     @SerializedName(ApiConstants.DESCRIPTION)
     @Param(description = "description of the backup configuration")
     private String description;
@@ -47,16 +51,18 @@ public class BackupConfigurationResponse extends BaseResponse {
     }
 
     public BackupConfigurationResponse(final String bucket, final String endpoint,
-        final String accessKey, final String secretKey) {
-        this(bucket, endpoint, accessKey, secretKey, null);
+        final String accessKey, final String secretKey, final String region) {
+        this(bucket, endpoint, accessKey, secretKey, region,null);
     }
 
     public BackupConfigurationResponse(final String bucket, final String endpoint,
-        final String accessKey, final String secretKey, final String description) {
+        final String accessKey, final String secretKey, final String region,
+        final String description) {
         this.bucket = bucket;
         this.endpoint = endpoint;
         this.accessKey = accessKey;
         this.secretKey = secretKey;
+        this.region = region;
         this.description = description;
     }
 
@@ -98,5 +104,13 @@ public class BackupConfigurationResponse extends BaseResponse {
 
     public void setDescription(final String description) {
         this.description = description;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(final String region) {
+        this.region = region;
     }
 }

@@ -44,6 +44,9 @@ public class BackupDeleteConfigurationCmd extends BaseCmd {
     @Parameter(name = ApiConstants.S3_SECRET_KEY, type = CommandType.STRING, description = "Secretkey")
     private String secretKey;
 
+    @Parameter(name = ApiConstants.S3_REGION, type = CommandType.STRING, description = "Region")
+    private String region;
+
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Description")
     private String description;
 
@@ -96,5 +99,13 @@ public class BackupDeleteConfigurationCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(final String region) {
+        this.region = region;
     }
 }

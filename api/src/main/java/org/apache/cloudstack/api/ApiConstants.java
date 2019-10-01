@@ -598,6 +598,7 @@ public class ApiConstants {
     public static final String S3_SECRET_KEY = "secretkey";
     public static final String S3_END_POINT = "endpoint";
     public static final String S3_BUCKET_NAME = "bucket";
+    public static final String S3_REGION = "region";
     public static final String S3_SIGNER = "s3signer";
     public static final String S3_V3_SIGNER = "S3SignerType";
     public static final String S3_V4_SIGNER = "AWSS3V4SignerType";

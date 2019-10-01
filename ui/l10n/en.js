@@ -1522,6 +1522,7 @@ var dictionary = {
 "label.backup.bucket":"Bucket",
 "label.backup.endpoint":"Region Endpoint",
 "label.backup.access.key":"Access Key",
+"label.backup.region":"Region",
 "label.backup.secret.key":"Secret Key",
 "label.backup.description":"Description",
 "label.s3.connection_timeout":"Connection Timeout",

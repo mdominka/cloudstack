@@ -168,8 +168,9 @@ CREATE TABLE `cloud`.`backup_configuration` (
   `endpoint` varchar(255) NOT NULL,
   `access_key` varchar(255) NOT NULL,
   `secret_key` varchar(255) NOT NULL,
+  `region` varchar(255) NOT NULL,
   `description` varchar(1024),
   PRIMARY KEY  (`bucket`, `endpoint`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT IGNORE INTO `cloud`.`backup_configuration` VALUES ('s3.bucket', 's3.region', 's3.access.key', 's3.secret.key', 'S3 config');
+INSERT IGNORE INTO `cloud`.`backup_configuration` VALUES ('s3.bucket', 's3.endpoint', 's3.access.key', 's3.secret.key', 's3.region', 'S3 config');

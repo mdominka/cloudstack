@@ -59,16 +59,17 @@ public class BackupManagerImpl implements BackupManager {
     public BackupConfigurationResponse createBackupConfigurationResponse(final BackupConfigurationVO configuration) {
         return new BackupConfigurationResponse(configuration.getBucket(),
             configuration.getEndpoint(), configuration.getAccessKey(),
-            configuration.getSecretKey(), configuration.getDescription());
+            configuration.getSecretKey(), configuration.getRegion(),
+            configuration.getDescription());
     }
 
     @Override
     public BackupConfigurationResponse addConfiguration(final String bucket, final String endpoint,
-        final String accessKey, final String secretKey, final String description)
+        final String accessKey, final String secretKey, final String region, final String description)
         throws InvalidParameterValueException {
 
         final BackupConfigurationVO entity = new BackupConfigurationVO(bucket, endpoint, accessKey,
-            encrypt(secretKey), description);
+            encrypt(secretKey), region, description);
 
         try {
             _backupConfigurationDao.persist(entity);
@@ -86,6 +87,7 @@ public class BackupManagerImpl implements BackupManager {
         final String endpoint = cmd.getEndpoint();
         final String accessKey = cmd.getAccessKey();
         final String secretKey = cmd.getSecretKey();
+        final String region = cmd.getRegion();
         final String description = cmd.getDescription();
 
         final SearchBuilder<BackupConfigurationVO> sb = _backupConfigurationDao.createSearchBuilder();
@@ -100,7 +102,7 @@ public class BackupManagerImpl implements BackupManager {
         _backupConfigurationDao.remove(sc);
 
         final BackupConfigurationVO entity = new BackupConfigurationVO(bucket, endpoint, accessKey,
-            secretKey, description);
+            secretKey, region, description);
         return createBackupConfigurationResponse(entity);
     }
 

@@ -253,6 +253,9 @@
                         secretkey: {
                             label: 'label.backup.secret.key'
                         },
+                        region: {
+                            label: 'label.backup.region'
+                        },
                         description: {
                             label: 'label.backup.description'
                         }
@@ -293,6 +296,7 @@
                                         endpoint: args.context.backupConfiguration[0].endpoint,
                                         accesskey: args.context.backupConfiguration[0].accesskey,
                                         secretkey: args.context.backupConfiguration[0].secretkey,
+                                        region: args.context.backupConfiguration[0].region,
                                         description: args.context.backupConfiguration[0].description
                                     };
                                     $.ajax({
@@ -321,6 +325,9 @@
                                     },
                                     secretkey: {
                                         label: 'label.backup.secret.key'
+                                    },
+                                    region: {
+                                        label: 'label.backup.region'
                                     },
                                     description: {
                                         label: 'label.backup.description'
@@ -382,6 +389,12 @@
                                             required: true
                                         }
                                     },
+                                    region: {
+                                        label: 'label.backup.region',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
                                     description: {
                                         label: 'label.backup.description',
                                         validation: {
@@ -396,6 +409,7 @@
                                 array.push("&endpoint=" + encodeURIComponent(args.data.endpoint));
                                 array.push("&accesskey=" + encodeURIComponent(args.data.accesskey));
                                 array.push("&secretkey=" + encodeURIComponent(args.data.secretkey));
+                                array.push("&region=" + encodeURIComponent(args.data.region));
                                 array.push("&description=" + encodeURIComponent(args.data.description));
                                 $.ajax({
                                     url: createURL("addBackupConfiguration" + array.join("")),

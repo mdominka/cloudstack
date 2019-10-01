@@ -39,6 +39,9 @@ public class BackupConfigurationVO {
     @Column(name = "secret_key")
     private String secretKey;
 
+    @Column(name = "region")
+    private String region;
+
     @Column(name = "description")
     private String description;
 
@@ -46,11 +49,13 @@ public class BackupConfigurationVO {
     }
 
     public BackupConfigurationVO(final String bucket, final String regionEndpoint,
-        final String accessKey, final String secretKey, final String description) {
+        final String accessKey, final String secretKey, final String region,
+        final String description) {
         this.bucket = bucket;
         this.endpoint = regionEndpoint;
         this.accessKey = accessKey;
         this.secretKey = secretKey;
+        this.region = region;
         this.description = description;
     }
 
@@ -84,5 +89,13 @@ public class BackupConfigurationVO {
 
     public void setDescription(final String description) {
         this.description = description;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(final String region) {
+        this.region = region;
     }
 }

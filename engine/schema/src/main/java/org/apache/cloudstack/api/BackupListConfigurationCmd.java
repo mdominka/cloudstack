@@ -50,6 +50,9 @@ public class BackupListConfigurationCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.S3_SECRET_KEY, type = CommandType.STRING, description = "Secretkey")
     private String secretKey;
 
+    @Parameter(name = ApiConstants.S3_REGION, type = CommandType.STRING, description = "Region")
+    private String region;
+
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Description")
     private String description;
 
@@ -124,4 +127,11 @@ public class BackupListConfigurationCmd extends BaseListCmd {
         this.description = description;
     }
 
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(final String region) {
+        this.region = region;
+    }
 }
