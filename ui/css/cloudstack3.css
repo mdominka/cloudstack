@@ -1532,7 +1532,7 @@ div.list-view td.state.notsuitable-storage-migration-required span {
   position: absolute;
   top: 55px;
   width: 456px;
-  height: 170px;
+  height: 250px;
   padding-top: 7px;
   border: 1px solid #808080;
   border-right: 0;
@@ -1565,7 +1565,7 @@ div.list-view td.state.notsuitable-storage-migration-required span {
 .quick-view-tooltip .detail-view .details {
   display: inline-block;
   height: auto;
-  padding-bottom: 224px;
+  padding-bottom: 305px;
 }
 
 .quick-view-tooltip .detail-view .detail-group {
@@ -1617,7 +1617,7 @@ div.list-view td.state.notsuitable-storage-migration-required span {
 .quick-view-tooltip .detail-view .detail-group.actions {
   position: relative;
   float: left;
-  top: 202px;
+  top: 285px;
   width: 100%;
   height: auto;
 }

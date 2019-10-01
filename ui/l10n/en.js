@@ -1520,7 +1520,7 @@ var dictionary = {
 "label.backup.configuration":"Backup Configuration",
 "label.configure.backup":"Configure Backup",
 "label.backup.bucket":"Bucket",
-"label.backup.endpoint":"Region Endpoint",
+"label.backup.endpoint":"Endpoint",
 "label.backup.access.key":"Access Key",
 "label.backup.region":"Region",
 "label.backup.secret.key":"Secret Key",
