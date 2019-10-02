@@ -935,6 +935,7 @@
                                         asyncBackup: (args.data.asyncBackup == 'on' ? true: false),
                                         s3Backup: args.data.s3Backup === 'on'
                                     };
+                                    console.log(data);
                                     if (args.data.name != null && args.data.name.length > 0) {
                                         $.extend(data, {
                                             name: args.data.name
@@ -1021,6 +1022,7 @@
                                                     s3Backup: snap.s3Backup === 'on',
                                                     timezone: snap.timezone
                                                 };
+                                                console.log(data);
 
                                                 var convertTime = function(minute, hour, meridiem, extra) {
                                                     var convertedHour = meridiem == 'PM' ?
@@ -1095,7 +1097,7 @@
                                                                 time: snapshot.intervaltype > 0 ? snapshot.schedule.split(':')[1] + ':' + snapshot.schedule.split(':')[0] : snapshot.schedule,
                                                                 timezone: snapshot.timezone,
                                                                 keep: snapshot.maxsnaps,
-                                                                s3Backup: snapshot.s3Backup === 'on',
+                                                                s3Backup: snapshot.s3Backup,
                                                                 'day-of-week': snapshot.intervaltype == 2 ? snapshot.schedule.split(':')[2] : null,
                                                                 'day-of-month': snapshot.intervaltype == 3 ? snapshot.schedule.split(':')[2] : null
                                                             }
