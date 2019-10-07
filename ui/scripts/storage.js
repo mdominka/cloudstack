@@ -1001,7 +1001,7 @@
                                                                     time: snapshot.intervaltype > 0 ? snapshot.schedule.split(':')[1] + ':' + snapshot.schedule.split(':')[0] : snapshot.schedule,
                                                                     timezone: snapshot.timezone,
                                                                     keep: snapshot.maxsnaps,
-                                                                    s3Backup: snapshot.s3Backup === 'on',
+                                                                    s3Backup: snapshot.s3backup === true ? 'YES' : 'NO',
                                                                     'day-of-week': snapshot.intervaltype == 2 ? snapshot.schedule.split(':')[2] : null,
                                                                     'day-of-month': snapshot.intervaltype == 3 ? snapshot.schedule.split(':')[2] : null
                                                                 };
@@ -1097,7 +1097,7 @@
                                                                 time: snapshot.intervaltype > 0 ? snapshot.schedule.split(':')[1] + ':' + snapshot.schedule.split(':')[0] : snapshot.schedule,
                                                                 timezone: snapshot.timezone,
                                                                 keep: snapshot.maxsnaps,
-                                                                s3Backup: snapshot.s3Backup,
+                                                                s3Backup: snapshot.s3backup === true ? 'YES' : 'NO',
                                                                 'day-of-week': snapshot.intervaltype == 2 ? snapshot.schedule.split(':')[2] : null,
                                                                 'day-of-month': snapshot.intervaltype == 3 ? snapshot.schedule.split(':')[2] : null
                                                             }

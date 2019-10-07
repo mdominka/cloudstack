@@ -103,7 +103,8 @@
                             );
                             $snapshotRow.find('td.keep span').html(args.data.keep);
                             $snapshotRow.find('td.s3Backup span').html(args.data.s3Backup);
-                            console.log(args.data.s3Backup, $snapshotRow.find('td.s3Backup span'));
+                            console.log("$snapshotRow.find('td.s3Backup span'): "+$snapshotRow.find('td.s3Backup span'));
+                            console.log("args.data.s3Backup: " + args.data.s3Backup);
 
                             $(':ui-dialog').dialog('option', 'position', 'center');
 
