@@ -70,7 +70,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
         s3TO.setEndPoint(config.getEndpoint());
         s3TO.setBucketName(config.getBucket());
         s3TO.setHttps(true);
-        s3TO.setRegion(Regions.EU_CENTRAL_1.getName());
+//        s3TO.setRegion(Regions.EU_CENTRAL_1.getName());
+        s3TO.setRegion(config.getRegion());
 
         final AWSCredentials credentials = new BasicAWSCredentials(config.getAccessKey(),
             Aes.decrypt(config.getSecretKey()));
@@ -99,34 +100,5 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
 //            S3Utils.listDirectory(s3TO, config.getBucket(), CLUSTER_PREFIX);
 
         return s3Objects;
-
-//        String accessKey = "accessKey1";
-//        String secretKey = "verySecretKey1";
-//        AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
-//
-//        ClientConfiguration clientConfig = new ClientConfiguration();
-//        clientConfig.setProtocol(Protocol.HTTPS);
-//
-//        AmazonS3 conn = new AmazonS3Client(credentials, clientConfig);
-//        conn.setEndpoint("sr03.cs.ewerk.com");
-//
-//        String prefix = "hci-cl01-nhjj";
-//
-//        String delimiter = "/";
-//        if (!prefix.endsWith(delimiter)) {
-//          prefix += delimiter;
-//        }
-//
-//
-//        ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
-//            .withBucketName("zenko").withPrefix(prefix)
-//            .withDelimiter(delimiter);
-//
-//        ObjectListing objects = conn.listObjects(listObjectsRequest);
-//        List<S3ObjectSummary> myList = new ArrayList<S3ObjectSummary>();
-//
-//        myList.addAll(objects.getObjectSummaries());
-//
-//        return myList;
     }
 }
