@@ -46,6 +46,7 @@ import com.solidfire.element.api.DeleteVolumeRequest;
 import com.solidfire.element.api.GetAccountByIDRequest;
 import com.solidfire.element.api.GetAccountByNameRequest;
 import com.solidfire.element.api.GetAsyncResultRequest;
+import com.solidfire.element.api.GetClusterInfoResult;
 import com.solidfire.element.api.ListSnapshotsRequest;
 import com.solidfire.element.api.ListVolumeAccessGroupsRequest;
 import com.solidfire.element.api.ListVolumesRequest;
@@ -1025,6 +1026,9 @@ public class SolidFireUtil {
     public static void startBulkVolumeRead(final long snapShotId, final SolidFireConnection sfConnection,
         final long volumeId, final String volumeName, final BackupConfigurationVO s3Config) {
 
+        final SolidFireElement sfe = getSolidFireElement(sfConnection);
+        final GetClusterInfoResult clusterInfo = sfe.getClusterInfo();
+
         final Map<String, String> parameters = buildS3Parameters(s3Config);
         final Map<String, Object> scriptParameters =
             buildScriptParameters(volumeId, volumeName, parameters, true);
@@ -1037,7 +1041,6 @@ public class SolidFireUtil {
             .optionalScriptParameters(scriptParameters)
             .build();
 
-        final SolidFireElement sfe = getSolidFireElement(sfConnection);
         final StartBulkVolumeReadResult sbvreadResult = sfe.startBulkVolumeRead(request);
     }
 

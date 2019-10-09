@@ -17,19 +17,10 @@
 
 package com.cloud.vm.backup;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.Protocol;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.ListObjectsRequest;
-import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.storage.S3.S3Utils;
 import com.cloud.vm.snapshot.BackupConfigurationVO;
 import com.cloud.vm.snapshot.crypto.Aes;
 import com.cloud.vm.snapshot.dao.BackupConfigurationDao;
@@ -69,34 +60,32 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
         s3TO.setEndPoint(config.getEndpoint());
         s3TO.setBucketName(config.getBucket());
         s3TO.setHttps(true);
-//        s3TO.setRegion(Regions.EU_CENTRAL_1.getName());
         s3TO.setRegion(config.getRegion());
 
-        final AWSCredentials credentials = new BasicAWSCredentials(config.getAccessKey(),
-            Aes.decrypt(config.getSecretKey()));
+//        final AWSCredentials credentials = new BasicAWSCredentials(config.getAccessKey(),
+//            Aes.decrypt(config.getSecretKey()));
+//
+//        final ClientConfiguration clientConfig = new ClientConfiguration();
+//        clientConfig.setProtocol(Protocol.HTTPS);
 
-        final ClientConfiguration clientConfig = new ClientConfiguration();
-        clientConfig.setProtocol(Protocol.HTTPS);
+//        final AmazonS3 amazonS3 = AmazonS3Client.builder()
+//            .withCredentials(new AWSStaticCredentialsProvider(credentials))
+//            .withClientConfiguration(clientConfig)
+//            .withEndpointConfiguration(
+//                new AwsClientBuilder.EndpointConfiguration(config.getEndpoint(),
+//                    config.getRegion()))
+//            .build();
 
-        final AmazonS3 amazonS3 = AmazonS3Client.builder()
-            .withCredentials(new AWSStaticCredentialsProvider(credentials))
-            .withClientConfiguration(clientConfig)
-            .withEndpointConfiguration(
-                new AwsClientBuilder.EndpointConfiguration(config.getEndpoint(),
-                    config.getRegion()))
-            .build();
+//        final ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
+//            .withBucketName(config.getBucket())
+//            .withPrefix(CLUSTER_PREFIX);
 
-        final ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
-            .withBucketName(config.getBucket())
-            .withPrefix(CLUSTER_PREFIX);
+//        final ObjectListing objects = amazonS3.listObjects(listObjectsRequest);
 
-        final ObjectListing objects = amazonS3.listObjects(listObjectsRequest);
+//        final List<S3ObjectSummary> s3Objects = new ArrayList<>(objects.getObjectSummaries());
 
-        final List<S3ObjectSummary> s3Objects = new ArrayList<>(objects.getObjectSummaries());
-
-// ToDo: reactivate this if tests ok
-//        final List<S3ObjectSummary> s3Objects =
-//            S3Utils.listDirectory(s3TO, config.getBucket(), CLUSTER_PREFIX);
+        final List<S3ObjectSummary> s3Objects =
+            S3Utils.listDirectory(s3TO, config.getBucket(), CLUSTER_PREFIX);
 
         return s3Objects;
     }
