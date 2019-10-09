@@ -1,3 +1,7 @@
+-- noinspection SqlNoDataSourceInspectionForFile
+
+-- noinspection SqlDialectInspectionForFile
+
 -- Licensed to the Apache Software Foundation (ASF) under one
 -- or more contributor license agreements.  See the NOTICE file
 -- distributed with this work for additional information
@@ -161,6 +165,7 @@ ALTER VIEW `cloud`.`service_offering_view` AS
 -- PR#2578 New column for listManagementServers API call
 ALTER TABLE `mshost` ADD COLUMN `uuid` varchar(40) AFTER `name`;
 
+-- S3 backup configuration
 DROP TABLE IF EXISTS `cloud`.`backup_configuration`;
 
 CREATE TABLE `cloud`.`backup_configuration` (
@@ -172,5 +177,3 @@ CREATE TABLE `cloud`.`backup_configuration` (
   `description` varchar(1024),
   PRIMARY KEY  (`bucket`, `endpoint`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-INSERT IGNORE INTO `cloud`.`backup_configuration` VALUES ('s3.bucket', 's3.endpoint', 's3.access.key', 's3.secret.key', 's3.region', 'S3 config');

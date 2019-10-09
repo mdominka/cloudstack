@@ -1,3 +1,7 @@
+-- noinspection SqlNoDataSourceInspectionForFile
+
+-- noinspection SqlDialectInspectionForFile
+
 -- Licensed to the Apache Software Foundation (ASF) under one
 -- or more contributor license agreements.  See the NOTICE file
 -- distributed with this work for additional information
@@ -21,3 +25,16 @@
 
 -- KVM: enable storage data motion on KVM hypervisor_capabilities
 UPDATE `cloud`.`hypervisor_capabilities` SET `storage_motion_supported` = 1 WHERE `hypervisor_capabilities`.`hypervisor_type` = 'KVM';
+
+-- S3 backup configuration
+DROP TABLE IF EXISTS `cloud`.`backup_configuration`;
+
+CREATE TABLE `cloud`.`backup_configuration` (
+  `bucket` varchar(255) NOT NULL,
+  `endpoint` varchar(255) NOT NULL,
+  `access_key` varchar(255) NOT NULL,
+  `secret_key` varchar(255) NOT NULL,
+  `region` varchar(255) NOT NULL,
+  `description` varchar(1024),
+  PRIMARY KEY  (`bucket`, `endpoint`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
