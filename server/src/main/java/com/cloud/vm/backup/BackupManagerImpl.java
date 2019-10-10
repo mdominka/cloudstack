@@ -27,6 +27,7 @@ import com.cloud.vm.snapshot.dao.BackupConfigurationDao;
 import org.apache.cloudstack.api.command.user.backup.ListBackupCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -44,6 +45,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
     DataStoreManager _dataStoreMgr;
     @Inject
     private BackupConfigurationDao backupConfigurationDao;
+    @Inject
+    private StoragePoolDetailsDao storagePoolDetailsDao;
 
     @Override
     public List<S3ObjectSummary> listBackups(ListBackupCmd cmd) {
@@ -62,31 +65,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
         s3TO.setHttps(true);
         s3TO.setRegion(config.getRegion());
 
-//        final AWSCredentials credentials = new BasicAWSCredentials(config.getAccessKey(),
-//            Aes.decrypt(config.getSecretKey()));
-//
-//        final ClientConfiguration clientConfig = new ClientConfiguration();
-//        clientConfig.setProtocol(Protocol.HTTPS);
-
-//        final AmazonS3 amazonS3 = AmazonS3Client.builder()
-//            .withCredentials(new AWSStaticCredentialsProvider(credentials))
-//            .withClientConfiguration(clientConfig)
-//            .withEndpointConfiguration(
-//                new AwsClientBuilder.EndpointConfiguration(config.getEndpoint(),
-//                    config.getRegion()))
-//            .build();
-
-//        final ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
-//            .withBucketName(config.getBucket())
-//            .withPrefix(CLUSTER_PREFIX);
-
-//        final ObjectListing objects = amazonS3.listObjects(listObjectsRequest);
-
-//        final List<S3ObjectSummary> s3Objects = new ArrayList<>(objects.getObjectSummaries());
-
-        final List<S3ObjectSummary> s3Objects =
-            S3Utils.listDirectory(s3TO, config.getBucket(), CLUSTER_PREFIX);
-
-        return s3Objects;
+      return S3Utils.listDirectory(s3TO, config.getBucket(), CLUSTER_PREFIX);
     }
 }
