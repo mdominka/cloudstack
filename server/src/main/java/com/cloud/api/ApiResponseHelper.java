@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api;
 
+import static java.lang.Long.parseLong;
+
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.ViewResponseHelper;
@@ -648,9 +650,17 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public BackupResponse createBackupResponse(S3ObjectSummary backup) {
-      BackupResponse backupResponse = new BackupResponse();
-      backupResponse.setName(backup.getKey());
+    public BackupResponse createBackupResponse(final S3ObjectSummary backup) {
+      final String volumeInfo = backup.getKey().split("/")[1];
+
+      final BackupResponse backupResponse = new BackupResponse();
+      backupResponse.setName(backup.getKey().split("/")[2]);
+      backupResponse.setCreationDate(backup.getLastModified().toString());
+      backupResponse.setState("on");
+
+      final int lastIndex = volumeInfo.lastIndexOf('-');
+      backupResponse.setVolumeName(volumeInfo.substring(0, lastIndex));
+      backupResponse.setVolumeId(parseLong(volumeInfo.substring(lastIndex+1)));
       backupResponse.setObjectName("backup");
       return backupResponse;
     }

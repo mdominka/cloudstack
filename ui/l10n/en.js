@@ -478,6 +478,7 @@ var dictionary = {
 "label.available":"Available",
 "label.available.public.ips":"Available Public IP Addresses",
 "label.back":"Back",
+"label.backupsnapshot":"S3 backup snapshots",
 "label.bandwidth":"Bandwidth",
 "label.baremetal.dhcp.devices":"Baremetal DHCP Devices",
 "label.baremetal.dhcp.provider":"Baremetal DHCP Provider",

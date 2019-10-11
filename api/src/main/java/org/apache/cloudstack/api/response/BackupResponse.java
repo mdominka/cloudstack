@@ -30,8 +30,24 @@ import com.cloud.serializer.Param;
 public class BackupResponse extends BaseResponse {
 
   @SerializedName(ApiConstants.NAME)
-  @Param(description = "the name of the vm snapshot")
+  @Param(description = "the name of the S3 snapshot")
   private String name;
+
+  @SerializedName(ApiConstants.VOLUME_ID)
+  @Param(description = "the ID of the disk volume")
+  private Long volumeId;
+
+  @SerializedName(ApiConstants.VOLUME_NAME)
+  @Param(description = "the name of the disk volume")
+  private String volumeName;
+
+  @SerializedName(ApiConstants.CREATED)
+  @Param(description = "the creation date of the snapshot")
+  private String creationDate;
+
+  @SerializedName(ApiConstants.STATE)
+  @Param(description = "show backup state")
+  private String state;
 
   public void setName(String name) {
     this.name = name;
@@ -39,5 +55,37 @@ public class BackupResponse extends BaseResponse {
 
   public String getName() {
     return name;
+  }
+
+  public String getCreationDate() {
+    return creationDate;
+  }
+
+  public void setCreationDate(final String creationDate) {
+    this.creationDate = creationDate;
+  }
+
+  public Long getVolumeId() {
+    return volumeId;
+  }
+
+  public void setVolumeId(final Long volumeId) {
+    this.volumeId = volumeId;
+  }
+
+  public String getVolumeName() {
+    return volumeName;
+  }
+
+  public void setVolumeName(final String volumeName) {
+    this.volumeName = volumeName;
+  }
+
+  public String getState() {
+    return state;
+  }
+
+  public void setState(final String state) {
+    this.state = state;
   }
 }

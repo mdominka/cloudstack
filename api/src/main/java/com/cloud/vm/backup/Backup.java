@@ -24,9 +24,24 @@ import org.apache.cloudstack.api.InternalIdentity;
 public interface Backup
     extends ControlledEntity, Identity, InternalIdentity {
 
-
-
-    public String setName(String key);
+    public String setName(final String key);
 
     public String getName();
+
+    public String setVolumeID(final String volumeId);
+
+    public String getVolumeId();
+
+    public String setVolumeName(final String volumeName);
+
+    public String getVolumeName();
+
+    public String setCreationDate(final String creationDate);
+
+    public String getCreationDate();
+
+    public String setState(final String state);
+
+    public String getState();
+
 }

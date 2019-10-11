@@ -20,9 +20,11 @@ package org.apache.cloudstack.api.command.user.backup;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.vm.backup.Backup;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
-import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,14 +35,32 @@ public class ListBackupCmd extends BaseListTaggedResourcesCmd {
 
     private static final String s_name = "listbackupsresponse";
 
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = BackupResponse.class, description = "lists backup snapshot by eTag ID")
+    private Long id;
+
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "lists snapshot by snapshot name")
+    private String snapshotName;
+
+    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.LONG, description = "the ID of the disk volume")
+    private Long volumeId;
+
+    @Parameter(name = ApiConstants.VOLUME_NAME, type = CommandType.STRING, description = "the name of the disk volume")
+    private String volumeName;
+
+    @Parameter(name = ApiConstants.CREATED, type = CommandType.STRING, description = "the creation date of the snapshot")
+    private String creationDate;
+
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "show backup state")
+    private String state;
+
     @Override
     public void execute() {
-        List<S3ObjectSummary> result = _BackupService.listBackups(this);
-        ListResponse<BackupResponse> response = new ListResponse<BackupResponse>();
-        List<BackupResponse> backupResponses = new ArrayList<BackupResponse>();
+        final List<S3ObjectSummary> result = _BackupService.listBackups(this);
+        final ListResponse<BackupResponse> response = new ListResponse<BackupResponse>();
+        final List<BackupResponse> backupResponses = new ArrayList<BackupResponse>();
 
-        for (S3ObjectSummary r : result) {
-          BackupResponse backupResponse = _responseGenerator.createBackupResponse(r);
+        for (final S3ObjectSummary s3Object : result) {
+          final BackupResponse backupResponse = _responseGenerator.createBackupResponse(s3Object);
           backupResponse.setObjectName("backup");
           backupResponses.add(backupResponse);
         }
@@ -55,4 +75,51 @@ public class ListBackupCmd extends BaseListTaggedResourcesCmd {
         return s_name;
     }
 
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(final Long id) {
+        this.id = id;
+    }
+
+    public String getSnapshotName() {
+        return snapshotName;
+    }
+
+    public void setSnapshotName(final String snapshotName) {
+        this.snapshotName = snapshotName;
+    }
+
+    public Long getVolumeId() {
+        return volumeId;
+    }
+
+    public void setVolumeId(final Long volumeId) {
+        this.volumeId = volumeId;
+    }
+
+    public String getVolumeName() {
+        return volumeName;
+    }
+
+    public void setVolumeName(final String volumeName) {
+        this.volumeName = volumeName;
+    }
+
+    public String getCreationDate() {
+        return creationDate;
+    }
+
+    public void setCreationDate(final String creationDate) {
+        this.creationDate = creationDate;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(final String state) {
+        this.state = state;
+    }
 }

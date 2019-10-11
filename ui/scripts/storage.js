@@ -2671,15 +2671,31 @@
                 title: 'label.backupsnapshot',
                 listView: {
                   id: 'backupsnapshots',
+                  label: 'label.backupsnapshot',
                   isMaximized: true,
                   fields: {
+                    volumename: {
+                      label: 'label.volume'
+                    },
                     name: {
                       label: 'label.name'
+                    },
+                    created: {
+                      label: 'label.created',
+                      converter: cloudStack.converters.toLocalDate
+                    },
+                    state: {
+                      label: 'label.state',
+                      indicator: {
+                           'BackedUp': 'on',
+                           'Destroyed': 'off'
+                      }
                     }
                   },
                   dataProvider: function(args) {
                     var data = {};
                     listViewDataProvider(args, data);
+
                     $.ajax({
                       url: createURL('listBackups'),
                       data: data,

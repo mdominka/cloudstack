@@ -33,6 +33,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -40,6 +41,7 @@ import javax.inject.Inject;
 public class BackupManagerImpl extends ManagerBase implements BackupService {
 
     private static final String CLUSTER_PREFIX = "hci-cl01-nhjj/";
+    private static final String S3_START_RECORD = "start";
 
     @Inject
     DataStoreManager _dataStoreMgr;
@@ -65,6 +67,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
         s3TO.setHttps(true);
         s3TO.setRegion(config.getRegion());
 
-      return S3Utils.listDirectory(s3TO, config.getBucket(), CLUSTER_PREFIX);
+        return doFilterS3Objects(S3Utils.listDirectory(s3TO, config.getBucket(), CLUSTER_PREFIX));
+    }
+
+    private List<S3ObjectSummary> doFilterS3Objects(final List<S3ObjectSummary> listDirectory) {
+      return listDirectory.stream().filter( s ->
+          s.getKey().toLowerCase().contains(S3_START_RECORD)).collect(Collectors.toList());
     }
 }
