@@ -656,13 +656,13 @@ public class ApiResponseHelper implements ResponseGenerator {
 
       final BackupResponse backupResponse = new BackupResponse();
         backupResponse.setName(fileName);
-        backupResponse.setSnapshotId(parseLong(fileName.substring(fileName.indexOf('-') + 1)));
+      backupResponse.setSnapshotId(parseLong(fileName.substring(fileName.lastIndexOf('-') + 1)));
       backupResponse.setCreationDate(backup.getLastModified().toString());
         backupResponse.setState("BackedUp");
 
       final int lastIndex = volumeInfo.lastIndexOf('-');
       backupResponse.setVolumeName(volumeInfo.substring(0, lastIndex));
-      backupResponse.setVolumeId(parseLong(volumeInfo.substring(lastIndex+1)));
+      backupResponse.setVolumeId(parseLong(volumeInfo.substring(lastIndex + 1)));
       backupResponse.setObjectName("backup");
       return backupResponse;
     }
