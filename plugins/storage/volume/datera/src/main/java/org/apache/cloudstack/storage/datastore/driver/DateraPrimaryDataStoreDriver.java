@@ -72,12 +72,13 @@ import org.apache.cloudstack.storage.datastore.util.DateraUtil;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.inject.Inject;
 
 public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final Logger s_logger = Logger.getLogger(DateraPrimaryDataStoreDriver.class);
@@ -1531,7 +1532,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
      */
     @Override
     public void revertSnapshot(SnapshotInfo snapshotInfo, SnapshotInfo snapshotOnPrimaryStore,
-            AsyncCompletionCallback<CommandResult> callback) {
+        AsyncCompletionCallback<CommandResult> callback, final Boolean isS3Backup) {
 
         VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
         VolumeVO volumeVO = _volumeDao.findById(volumeInfo.getId());

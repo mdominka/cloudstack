@@ -16,12 +16,13 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.driver;
 
-import java.util.Map;
-
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.host.Host;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -39,14 +40,11 @@ import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.datastore.DataObjectManager;
+import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.host.Host;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.util.Map;
+
+import javax.inject.Inject;
 
 public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
     private static final Logger s_logger = Logger.getLogger(SamplePrimaryDataStoreDriverImpl.class);
@@ -212,7 +210,8 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
     }
 
     @Override
-    public void revertSnapshot(SnapshotInfo snapshot, SnapshotInfo snapshotOnPrimaryStore, AsyncCompletionCallback<CommandResult> callback) {
+    public void revertSnapshot(SnapshotInfo snapshot, SnapshotInfo snapshotOnPrimaryStore,
+        AsyncCompletionCallback<CommandResult> callback, final Boolean isS3Backup) {
     }
 
     @Override

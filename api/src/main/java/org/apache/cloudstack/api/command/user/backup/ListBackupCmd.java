@@ -47,6 +47,10 @@ public class ListBackupCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.VOLUME_NAME, type = CommandType.STRING, description = "the name of the disk volume")
     private String volumeName;
 
+    @Parameter(name = ApiConstants.SNAPSHOT_ID, type = CommandType.LONG, description = "the id of"
+        + " the snapshot")
+    private Long snapshotId;
+
     @Parameter(name = ApiConstants.CREATED, type = CommandType.STRING, description = "the creation date of the snapshot")
     private String creationDate;
 
@@ -121,5 +125,13 @@ public class ListBackupCmd extends BaseListTaggedResourcesCmd {
 
     public void setState(final String state) {
         this.state = state;
+    }
+
+    public Long getSnapshotId() {
+        return snapshotId;
+    }
+
+    public void setSnapshotId(final Long snapshotId) {
+        this.snapshotId = snapshotId;
     }
 }

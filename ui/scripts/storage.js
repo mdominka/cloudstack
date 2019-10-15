@@ -2664,7 +2664,7 @@
                 }
             },
             /**
-             * Backup Snapshots
+             * S3 Backup Snapshots
              */
               backupsnapshots: {
                 type: 'select',
@@ -2675,14 +2675,19 @@
                   isMaximized: true,
                   fields: {
                     volumename: {
-                      label: 'label.volume'
+                        label: 'label.volume.name'
                     },
+                      volumeid: {
+                          label: 'label.volume.id'
+                      },
+                      snapshotid: {
+                          label: 'label.volume.snapshot.id'
+                      },
                     name: {
                       label: 'label.name'
                     },
                     created: {
-                      label: 'label.created',
-                      converter: cloudStack.converters.toLocalDate
+                        label: 'label.created'
                     },
                     state: {
                       label: 'label.state',
@@ -2709,7 +2714,94 @@
                         });
                       }
                     });
-                  }
+                  },
+                    detailView: {
+                        name: 'Snapshot detail',
+                        actions: {
+                            revertSnapshot: {
+                                label: 'label.action.revert.snapshot',
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'message.action.revert.snapshot';
+                                    },
+                                    notification: function (args) {
+                                        return 'label.action.revert.snapshot';
+                                    }
+                                },
+                                action: function (args) {
+                                    var data = {
+                                        s3backup: true
+                                    };
+                                    $.ajax({
+                                        url: createURL("revertSnapshot&id=" + args.context.backup[0].snapshotid),
+                                        dataType: "json",
+                                        async: true,
+                                        data: data,
+                                        success: function (json) {
+                                            var jid = json.revertsnapshotresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                        },
+                        tabs: {
+                            details: {
+                                title: 'label.details',
+                                fields: [{
+                                    name: {
+                                        label: 'label.name'
+                                    }
+                                }, {
+                                    volumename: {
+                                        label: 'label.volume.name'
+                                    },
+                                    volumeid: {
+                                        label: 'label.volume.id'
+                                    },
+                                    snapshotid: {
+                                        label: 'label.volume.snapshot.id'
+                                    },
+                                    name: {
+                                        label: 'label.name'
+                                    },
+                                    state: {
+                                        label: 'label.state'
+                                    },
+                                    created: {
+                                        label: 'label.created'
+                                    }
+                                }],
+
+                                tags: cloudStack.api.tags({
+                                    resourceType: 'Snapshot',
+                                    contextId: 'snapshots'
+                                }),
+
+                                dataProvider: function (args) {
+                                    $.ajax({
+                                        url: createURL("listBackups&snapshotid=" + args.context.backup[0].snapshotid),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function (json) {
+                                            var jsonObj = json.listbackupsresponse.backup;
+                                            args.response.success({
+                                                actionFilter: snapshotActionfilter,
+                                                data: jsonObj[0]
+                                            });
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    }
                 }
               }
         }

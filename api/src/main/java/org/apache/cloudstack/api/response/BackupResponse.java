@@ -17,14 +17,12 @@
 
 package org.apache.cloudstack.api.response;
 
+import com.cloud.serializer.Param;
 import com.cloud.vm.backup.Backup;
 import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
-
-import com.cloud.serializer.Param;
 
 @EntityReference(value = Backup.class)
 public class BackupResponse extends BaseResponse {
@@ -36,6 +34,10 @@ public class BackupResponse extends BaseResponse {
   @SerializedName(ApiConstants.VOLUME_ID)
   @Param(description = "the ID of the disk volume")
   private Long volumeId;
+
+  @SerializedName(ApiConstants.SNAPSHOT_ID)
+  @Param(description = "the ID of the snapshot")
+  private Long snapshotId;
 
   @SerializedName(ApiConstants.VOLUME_NAME)
   @Param(description = "the name of the disk volume")
@@ -71,6 +73,14 @@ public class BackupResponse extends BaseResponse {
 
   public void setVolumeId(final Long volumeId) {
     this.volumeId = volumeId;
+  }
+
+  public Long getSnapshotId() {
+    return snapshotId;
+  }
+
+  public void setSnapshotId(final Long snapshotId) {
+    this.snapshotId = snapshotId;
   }
 
   public String getVolumeName() {

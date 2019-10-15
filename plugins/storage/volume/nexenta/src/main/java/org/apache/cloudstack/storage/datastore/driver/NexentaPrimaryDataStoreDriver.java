@@ -20,10 +20,16 @@ package org.apache.cloudstack.storage.datastore.driver;
 
 import static org.apache.cloudstack.storage.datastore.util.NexentaUtil.NexentaPluginParameters;
 
-import java.util.Map;
-
-import javax.inject.Inject;
-
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.host.Host;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -43,16 +49,9 @@ import org.apache.cloudstack.storage.datastore.util.NexentaStorAppliance.Nexenta
 import org.apache.cloudstack.storage.datastore.util.NexentaUtil;
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.to.DataObjectType;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.host.Host;
-import com.cloud.storage.Storage;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.user.dao.AccountDao;
+import java.util.Map;
+
+import javax.inject.Inject;
 
 public class NexentaPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final Logger logger = Logger.getLogger(NexentaPrimaryDataStoreDriver.class);
@@ -135,7 +134,9 @@ public class NexentaPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {}
 
     @Override
-    public void revertSnapshot(SnapshotInfo snapshot, SnapshotInfo snapshotOnPrimaryStore, AsyncCompletionCallback<CommandResult> callback) {}
+    public void revertSnapshot(SnapshotInfo snapshot, SnapshotInfo snapshotOnPrimaryStore,
+        AsyncCompletionCallback<CommandResult> callback, final Boolean isS3Backup) {
+    }
 
     @Override
     public void createAsync(DataStore dataStore, DataObject dataObject, AsyncCompletionCallback<CreateCmdResult> callback) {

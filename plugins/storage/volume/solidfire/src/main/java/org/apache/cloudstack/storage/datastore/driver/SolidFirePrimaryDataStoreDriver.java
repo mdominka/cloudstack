@@ -1338,7 +1338,8 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     @Override
-    public void revertSnapshot(SnapshotInfo snapshot, SnapshotInfo snapshot2, AsyncCompletionCallback<CommandResult> callback) {
+    public void revertSnapshot(SnapshotInfo snapshot, SnapshotInfo snapshot2,
+        AsyncCompletionCallback<CommandResult> callback, final Boolean isS3Backup) {
         VolumeInfo volumeInfo = snapshot.getBaseVolume();
 
         VolumeVO volumeVO = volumeDao.findById(volumeInfo.getId());

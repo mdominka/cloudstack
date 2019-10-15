@@ -652,11 +652,13 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public BackupResponse createBackupResponse(final S3ObjectSummary backup) {
       final String volumeInfo = backup.getKey().split("/")[1];
+        final String fileName = backup.getKey().split("/")[2];
 
       final BackupResponse backupResponse = new BackupResponse();
-      backupResponse.setName(backup.getKey().split("/")[2]);
+        backupResponse.setName(fileName);
+        backupResponse.setSnapshotId(parseLong(fileName.substring(fileName.indexOf('-') + 1)));
       backupResponse.setCreationDate(backup.getLastModified().toString());
-      backupResponse.setState("on");
+        backupResponse.setState("BackedUp");
 
       final int lastIndex = volumeInfo.lastIndexOf('-');
       backupResponse.setVolumeName(volumeInfo.substring(0, lastIndex));

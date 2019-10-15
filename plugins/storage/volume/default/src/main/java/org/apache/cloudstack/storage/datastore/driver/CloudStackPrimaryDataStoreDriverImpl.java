@@ -18,14 +18,29 @@
  */
 package org.apache.cloudstack.storage.datastore.driver;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.ResizeVolumeAnswer;
+import com.cloud.agent.api.storage.ResizeVolumeCommand;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.Host;
+import com.cloud.host.dao.HostDao;
+import com.cloud.storage.CreateSnapshotPayload;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ResizeVolumePayload;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.template.TemplateManager;
+import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -53,30 +68,13 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
+import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.storage.ResizeVolumeAnswer;
-import com.cloud.agent.api.storage.ResizeVolumeCommand;
-import com.cloud.agent.api.to.DataObjectType;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.api.to.StorageFilerTO;
-import com.cloud.exception.StorageUnavailableException;
-import com.cloud.host.Host;
-import com.cloud.host.dao.HostDao;
-import com.cloud.storage.CreateSnapshotPayload;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.ResizeVolumePayload;
-import com.cloud.storage.Storage;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.template.TemplateManager;
-import com.cloud.vm.dao.VMInstanceDao;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.inject.Inject;
 
 public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
     @Override
@@ -328,7 +326,8 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     }
 
     @Override
-    public void revertSnapshot(SnapshotInfo snapshot, SnapshotInfo snapshotOnPrimaryStore, AsyncCompletionCallback<CommandResult> callback) {
+    public void revertSnapshot(SnapshotInfo snapshot, SnapshotInfo snapshotOnPrimaryStore,
+        AsyncCompletionCallback<CommandResult> callback, final Boolean isS3Backup) {
         SnapshotObjectTO snapshotTO = (SnapshotObjectTO)snapshot.getTO();
         RevertSnapshotCommand cmd = new RevertSnapshotCommand(snapshotTO);
 

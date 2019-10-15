@@ -18,6 +18,9 @@
  */
 package org.apache.cloudstack.api.command.user.snapshot;
 
+import com.cloud.event.EventTypes;
+import com.cloud.storage.Snapshot;
+import com.cloud.user.Account;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -32,10 +35,6 @@ import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
-import com.cloud.event.EventTypes;
-import com.cloud.storage.Snapshot;
-import com.cloud.user.Account;
-
 @APICommand(name = "revertSnapshot", description = "This is supposed to revert a volume snapshot. This command is only supported with KVM so far", responseObject = SnapshotResponse.class, entityType = {Snapshot.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RevertSnapshotCmd extends BaseAsyncCmd {
@@ -49,6 +48,10 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
     @Parameter(name= ApiConstants.ID, type= BaseCmd.CommandType.UUID, entityType = SnapshotResponse.class,
             required=true, description="The ID of the snapshot")
     private Long id;
+
+    @Parameter(name = ApiConstants.S3_BACKUP, type = CommandType.BOOLEAN, description = "is "
+        + "snapshot backup location on s3 storage")
+    private Boolean isS3Backup;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -98,6 +101,8 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Snapshot Id: " + this._uuidMgr.getUuid(Snapshot.class, getId()));
+        final Boolean isS3Backup = getS3Backup();
+
         Snapshot snapshot = _snapshotService.revertSnapshot(getId());
         if (snapshot != null) {
             SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);
@@ -106,5 +111,13 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to revert snapshot");
         }
+    }
+
+    public Boolean getS3Backup() {
+        return isS3Backup;
+    }
+
+    public void setS3Backup(final Boolean s3Backup) {
+        isS3Backup = s3Backup;
     }
 }

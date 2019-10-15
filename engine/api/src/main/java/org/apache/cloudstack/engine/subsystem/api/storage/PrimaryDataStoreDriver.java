@@ -18,11 +18,10 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.command.CommandResult;
-
 import com.cloud.host.Host;
 import com.cloud.storage.StoragePool;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.command.CommandResult;
 
 public interface PrimaryDataStoreDriver extends DataStoreDriver {
     enum QualityOfServiceState { MIGRATION, NO_MIGRATION }
@@ -69,7 +68,8 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
 
     void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback);
 
-    void revertSnapshot(SnapshotInfo snapshotOnImageStore, SnapshotInfo snapshotOnPrimaryStore, AsyncCompletionCallback<CommandResult> callback);
+    void revertSnapshot(SnapshotInfo snapshotOnImageStore, SnapshotInfo snapshotOnPrimaryStore,
+        AsyncCompletionCallback<CommandResult> callback, final Boolean isS3Backup);
 
     void handleQualityOfServiceForVolumeMigration(VolumeInfo volumeInfo, QualityOfServiceState qualityOfServiceState);
 }

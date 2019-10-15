@@ -17,11 +17,20 @@
 
 package org.apache.cloudstack.storage.snapshot;
 
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-
-import javax.inject.Inject;
-
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
+import com.cloud.storage.CreateSnapshotPayload;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.template.TemplateConstants;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
@@ -48,20 +57,10 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.log4j.Logger;
 
-import com.cloud.storage.CreateSnapshotPayload;
-import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.SnapshotDetailsDao;
-import com.cloud.storage.template.TemplateConstants;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionStatus;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.fsm.NoTransitionException;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+
+import javax.inject.Inject;
 
 public class SnapshotServiceImpl implements SnapshotService {
     private static final Logger s_logger = Logger.getLogger(SnapshotServiceImpl.class);
@@ -438,7 +437,9 @@ public class SnapshotServiceImpl implements SnapshotService {
         AsyncCallbackDispatcher<SnapshotServiceImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().revertSnapshotCallback(null, null)).setContext(context);
 
-        ((PrimaryDataStoreDriver)store.getDriver()).revertSnapshot(snapshot, snapshotOnPrimaryStore, caller);
+        // ToDo: note isS3Backup
+        ((PrimaryDataStoreDriver) store.getDriver()).revertSnapshot(snapshot,
+            snapshotOnPrimaryStore, caller, null);
 
         SnapshotResult result = null;
         try {

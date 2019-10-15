@@ -41,7 +41,7 @@ import javax.inject.Inject;
 public class BackupManagerImpl extends ManagerBase implements BackupService {
 
     private static final String CLUSTER_PREFIX = "hci-cl01-nhjj/";
-    private static final String S3_START_RECORD = "start";
+    private static final String S3_START_RECORD = "manifest";
 
     @Inject
     DataStoreManager _dataStoreMgr;

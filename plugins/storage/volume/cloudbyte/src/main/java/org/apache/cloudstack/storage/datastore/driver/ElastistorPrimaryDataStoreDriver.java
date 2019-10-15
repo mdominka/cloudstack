@@ -19,12 +19,22 @@
 
 package org.apache.cloudstack.storage.datastore.driver;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.ResizeVolumePayload;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.user.AccountManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -43,23 +53,12 @@ import org.apache.cloudstack.storage.datastore.util.ElastistorUtil;
 import org.apache.cloudstack.storage.datastore.util.ElastistorUtil.FileSystem;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
+import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.to.DataObjectType;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.ResizeVolumePayload;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.VolumeDetailVO;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.user.AccountManager;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.inject.Inject;
 
 /**
  * The implementation class for <code>ElastistorPrimaryDataStoreDriver</code>.
@@ -396,7 +395,8 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
     }
 
     @Override
-    public void revertSnapshot(SnapshotInfo snapshot, SnapshotInfo snapshotOnPrimaryStore, AsyncCompletionCallback<CommandResult> callback) {
+    public void revertSnapshot(SnapshotInfo snapshot, SnapshotInfo snapshotOnPrimaryStore,
+        AsyncCompletionCallback<CommandResult> callback, final Boolean isS3Backup) {
         throw new UnsupportedOperationException();
     }
 
