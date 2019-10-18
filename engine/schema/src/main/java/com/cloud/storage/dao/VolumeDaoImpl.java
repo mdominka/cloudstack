@@ -16,18 +16,6 @@
 // under the License.
 package com.cloud.storage.dao;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.server.ResourceTag.ResourceObjectType;
@@ -50,6 +38,17 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import javax.inject.Inject;
 
 @Component
 public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements VolumeDao {
@@ -243,6 +242,15 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
+    public List<VolumeVO> findByVolumeNameAndFolder(final String volumeName, final String folder) {
+        final SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("name", volumeName);
+        sc.setParameters("folder", folder);
+
+        return listBy(sc);
+    }
+
+    @Override
     public boolean isAnyVolumeActivelyUsingTemplateOnPool(long templateId, long poolId) {
         SearchCriteria<Long> sc = ActiveTemplateSearch.create();
         sc.setParameters("template", templateId);
@@ -353,6 +361,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         AllFieldsSearch.and("updateTime", AllFieldsSearch.entity().getUpdated(), SearchCriteria.Op.LT);
         AllFieldsSearch.and("updatedCount", AllFieldsSearch.entity().getUpdatedCount(), Op.EQ);
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), Op.EQ);
+        AllFieldsSearch.and("folder", AllFieldsSearch.entity().getFolder(), Op.EQ);
         AllFieldsSearch.done();
 
         DetachedAccountIdSearch = createSearchBuilder();

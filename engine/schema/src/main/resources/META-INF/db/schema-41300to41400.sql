@@ -38,3 +38,5 @@ CREATE TABLE `cloud`.`backup_configuration` (
   `description` varchar(1024),
   PRIMARY KEY  (`bucket`, `endpoint`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `snapshots` ADD `sf_snapshot_id` BIGINT(20) UNSIGNED NULL DEFAULT NULL COMMENT 'Solidfire Snapshot ID';

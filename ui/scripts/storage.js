@@ -2718,6 +2718,7 @@
                     detailView: {
                         name: 'Snapshot detail',
                         actions: {
+                            // revert a snapshot
                             revertSnapshot: {
                                 label: 'label.action.revert.snapshot',
                                 messages: {
@@ -2730,10 +2731,13 @@
                                 },
                                 action: function (args) {
                                     var data = {
-                                        s3backup: true
+                                        s3backup: true,
+                                        volumeid: args.context.backupsnapshots[0].volumeid,
+                                        volumename: args.context.backupsnapshots[0].volumename,
+                                        name: args.context.backupsnapshots[0].name
                                     };
                                     $.ajax({
-                                        url: createURL("revertSnapshot&id=" + args.context.backup[0].snapshotid),
+                                        url: createURL("revertSnapshot&id=" + args.context.backupsnapshots[0].snapshotid),
                                         dataType: "json",
                                         async: true,
                                         data: data,
@@ -2750,7 +2754,7 @@
                                 notification: {
                                     poll: pollAsyncJobResult
                                 }
-                            },
+                            }
                         },
                         tabs: {
                             details: {
@@ -2787,13 +2791,12 @@
 
                                 dataProvider: function (args) {
                                     $.ajax({
-                                        url: createURL("listBackups&snapshotid=" + args.context.backup[0].snapshotid),
+                                        url: createURL("listBackups&snapshotid=" + args.context.backupsnapshots[0].snapshotid),
                                         dataType: "json",
                                         async: true,
                                         success: function (json) {
                                             var jsonObj = json.listbackupsresponse.backup;
                                             args.response.success({
-                                                actionFilter: snapshotActionfilter,
                                                 data: jsonObj[0]
                                             });
                                         }

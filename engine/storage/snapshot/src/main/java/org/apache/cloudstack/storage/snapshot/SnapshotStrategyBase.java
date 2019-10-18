@@ -16,11 +16,11 @@
 // under the License.
 package org.apache.cloudstack.storage.snapshot;
 
-import javax.inject.Inject;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
+
+import javax.inject.Inject;
 
 public abstract class SnapshotStrategyBase implements SnapshotStrategy {
     @Inject
@@ -39,5 +39,10 @@ public abstract class SnapshotStrategyBase implements SnapshotStrategy {
     @Override
     public boolean revertSnapshot(SnapshotInfo snapshot) {
         return snapshotSvr.revertSnapshot(snapshot);
+    }
+
+    @Override
+    public boolean revertSnapshot(final SnapshotInfo snapshotInfo, final String fileName) {
+        return snapshotSvr.revertSnapshot(snapshotInfo, fileName);
     }
 }

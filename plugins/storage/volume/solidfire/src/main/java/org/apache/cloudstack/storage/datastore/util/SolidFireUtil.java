@@ -39,6 +39,7 @@ import com.solidfire.element.api.AddVolumesToVolumeAccessGroupRequest;
 import com.solidfire.element.api.CloneVolumeRequest;
 import com.solidfire.element.api.CloneVolumeResult;
 import com.solidfire.element.api.CreateSnapshotRequest;
+import com.solidfire.element.api.CreateSnapshotResult;
 import com.solidfire.element.api.CreateVolumeAccessGroupRequest;
 import com.solidfire.element.api.CreateVolumeRequest;
 import com.solidfire.element.api.DeleteSnapshotRequest;
@@ -76,6 +77,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -1007,7 +1009,8 @@ public class SolidFireUtil {
 
     private static Map<String, Object> buildScriptParameters(
         final GetClusterInfoResult clusterInfoResult, final long volumeId, final String volumeName,
-        final Map<String, String> parameters, final Boolean hasWriteParameters) {
+        final Map<String, String> parameters, final String fileName,
+        final Boolean hasWriteParameters) {
 
         final Map<String, Integer> rangeParameters = new HashMap<>();
         rangeParameters.put("lba", 0);
@@ -1017,7 +1020,13 @@ public class SolidFireUtil {
         clusterPrefix.add(clusterInfoResult.getClusterInfo().getName())
           .add(clusterInfoResult.getClusterInfo().getUniqueID());
 
-        parameters.put("prefix", clusterPrefix + volumeName + '-' + volumeId);
+        final StringBuilder prefix = new StringBuilder();
+        prefix.append(clusterPrefix).append(volumeName).append('-').append(volumeId);
+
+        if (Objects.nonNull(fileName)) {
+            prefix.append('/').append(fileName);
+        }
+        parameters.put("prefix", prefix.toString());
         parameters.put("endpoint", S3_ENDPOINT);
         parameters.put("format", S3_FORMAT);
 
@@ -1034,8 +1043,8 @@ public class SolidFireUtil {
         final SolidFireElement sfe = getSolidFireElement(sfConnection);
 
         final Map<String, String> parameters = buildS3Parameters(s3Config);
-        final Map<String, Object> scriptParameters =
-            buildScriptParameters(sfe.getClusterInfo(), volumeId, volumeName, parameters, true);
+        final Map<String, Object> scriptParameters = buildScriptParameters(sfe.getClusterInfo(),
+            volumeId, volumeName, parameters, null, true);
 
         final StartBulkVolumeReadRequest request = StartBulkVolumeReadRequest.builder()
             .format(S3_FORMAT)
@@ -1048,24 +1057,24 @@ public class SolidFireUtil {
         sfe.startBulkVolumeRead(request);
     }
 
-    public static void startBulkVolumeWrite(SolidFireConnection sfConnection, long volumeId,
-        String volumeName, final Map<String, String> parameters) {
+    public static Long startBulkVolumeWrite(final SolidFireConnection sfConnection,
+        final long volumeId, final String volumeName, final BackupConfigurationVO s3Config,
+        final String fileName) {
 
         final SolidFireElement sfe = getSolidFireElement(sfConnection);
 
-        // ToDo: using s3 backup_configuration
-        // final Map<String, String> parameters = buildS3Parameters(s3Config);
+        final Map<String, String> parameters = buildS3Parameters(s3Config);
         final Map<String, Object> scriptParameters = buildScriptParameters(sfe.getClusterInfo(),
-            volumeId, volumeName, parameters, false);
+            volumeId, volumeName, parameters, fileName, false);
 
-        StartBulkVolumeWriteRequest request = StartBulkVolumeWriteRequest.builder()
+        final StartBulkVolumeWriteRequest request = StartBulkVolumeWriteRequest.builder()
             .format(S3_FORMAT)
             .volumeID(volumeId)
             .optionalScript("bv_internal.py")
             .optionalScriptParameters(scriptParameters)
             .build();
 
-        getSolidFireElement(sfConnection).startBulkVolumeWrite(request);
+        return getSolidFireElement(sfConnection).startBulkVolumeWrite(request).getAsyncHandle();
     }
 
     public static List<Snapshot> getSnapshotList(final SolidFireUtil.SolidFireConnection connection,
@@ -1123,13 +1132,14 @@ public class SolidFireUtil {
         getSolidFireElement(sfConnection).deleteSnapshot(request);
     }
 
-    public static void rollBackVolumeToSnapshot(SolidFireConnection sfConnection, long volumeId, long snapshotId) {
+    public static CreateSnapshotResult rollBackVolumeToSnapshot(SolidFireConnection sfConnection,
+        long volumeId, long snapshotId) {
         RollbackToSnapshotRequest request = RollbackToSnapshotRequest.builder()
                 .volumeID(volumeId)
                 .snapshotID(snapshotId)
                 .build();
 
-        getSolidFireElement(sfConnection).rollbackToSnapshot(request);
+        return getSolidFireElement(sfConnection).rollbackToSnapshot(request);
     }
 
     public static class SolidFireSnapshot {

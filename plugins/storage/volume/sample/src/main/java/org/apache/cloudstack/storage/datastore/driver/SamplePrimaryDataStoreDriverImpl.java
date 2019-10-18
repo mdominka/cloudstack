@@ -211,7 +211,8 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
 
     @Override
     public void revertSnapshot(SnapshotInfo snapshot, SnapshotInfo snapshotOnPrimaryStore,
-        AsyncCompletionCallback<CommandResult> callback, final Boolean isS3Backup) {
+        AsyncCompletionCallback<CommandResult> callback, final Boolean isS3Backup,
+        final String fileName) {
     }
 
     @Override

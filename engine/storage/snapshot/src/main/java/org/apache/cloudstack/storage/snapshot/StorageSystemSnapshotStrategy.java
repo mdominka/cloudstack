@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.storage.snapshot;
 
+import static java.util.Objects.isNull;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ModifyTargetsCommand;
@@ -38,25 +40,24 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.storage.VolumeDetailVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotService;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.google.common.base.Preconditions;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
@@ -77,8 +78,6 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -87,6 +86,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
+
+import javax.inject.Inject;
 
 @Component
 public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
@@ -318,23 +319,51 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         return true;
     }
 
-    /**
-     * Executes the SnapshotStrategyBase.revertSnapshot(SnapshotInfo) method, and handles the SnapshotVO table update and the Volume.Event state machine (RevertSnapshotRequested).
-     */
-    protected void executeRevertSnapshot(SnapshotInfo snapshotInfo, VolumeInfo volumeInfo) {
-        Long hostId = null;
-        boolean success = false;
+    @Override
+    public boolean revertSnapshot(final SnapshotInfo snapshotInfo, final String fileName) {
+        final VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
+        verifyFormat(volumeInfo);
+        verifyDiskTypeAndHypervisor(volumeInfo);
+        verifySnapshotType(snapshotInfo);
 
-        SnapshotVO snapshotVO = snapshotDao.acquireInLockTable(snapshotInfo.getId());
+        final SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(
+            snapshotInfo.getId(), DataStoreRole.Primary);
 
-        if (snapshotVO == null) {
-            String errMsg = "Failed to acquire lock on the following snapshot: " + snapshotInfo.getId();
+        if (snapshotStore != null) {
+            final long snapshotStoragePoolId = snapshotStore.getDataStoreId();
 
+            if (!volumeInfo.getPoolId().equals(snapshotStoragePoolId)) {
+                final String errMsg = "Storage pool mismatch";
+                s_logger.error(errMsg);
+                throw new CloudRuntimeException(errMsg);
+            }
+        }
+        final boolean storageSystemSupportsCapability = storageSystemSupportsCapability(
+            volumeInfo.getPoolId(), DataStoreCapabilities.CAN_REVERT_VOLUME_TO_SNAPSHOT.toString());
+
+        if (!storageSystemSupportsCapability) {
+            String errMsg = "Storage pool revert capability not supported";
             s_logger.error(errMsg);
-
             throw new CloudRuntimeException(errMsg);
         }
 
+        executeRevertSnapshot(snapshotInfo, volumeInfo, fileName);
+
+        return false;
+    }
+
+    private void executeRevertSnapshot(final SnapshotInfo snapshotInfo, final VolumeInfo volumeInfo,
+        final String fileName) {
+        final SnapshotVO snapshotVO = snapshotDao.acquireInLockTable(snapshotInfo.getId());
+
+        if (isNull(snapshotVO)) {
+            final String errMsg =
+                "Failed to acquire lock on the following snapshot: " + snapshotInfo.getId();
+            s_logger.error(errMsg);
+            throw new CloudRuntimeException(errMsg);
+        }
+        Long hostId = null;
+        boolean success = false;
         try {
             volumeInfo.stateTransit(Volume.Event.RevertSnapshotRequested);
 
@@ -342,45 +371,54 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                 hostId = getHostId(volumeInfo);
 
                 if (hostId != null) {
-                    HostVO hostVO = hostDao.findById(hostId);
-                    DataStore dataStore = dataStoreMgr.getDataStore(volumeInfo.getPoolId(), DataStoreRole.Primary);
+                    final HostVO hostVO = hostDao.findById(hostId);
+                    final DataStore dataStore = dataStoreMgr.getDataStore(volumeInfo.getPoolId(),
+                        DataStoreRole.Primary);
 
                     volService.revokeAccess(volumeInfo, hostVO, dataStore);
-
                     modifyTarget(false, volumeInfo, hostId);
                 }
             }
 
-            success = snapshotSvr.revertSnapshot(snapshotInfo);
-
+            if (isNull(fileName)) {
+                success = snapshotSvr.revertSnapshot(snapshotInfo);
+            } else {
+                success = snapshotSvr.revertSnapshot(snapshotInfo, fileName);
+            }
             if (!success) {
-                String errMsg = String.format("Failed to revert volume [name:%s, format:%s] to snapshot [id:%s] state", volumeInfo.getName(), volumeInfo.getFormat(),
-                        snapshotInfo.getSnapshotId());
+                final String errMsg = String.format(
+                    "Failed to revert volume [name:%s, format:%s] to snapshot [id:%s] state",
+                    volumeInfo.getName(), volumeInfo.getFormat(), snapshotInfo.getSnapshotId());
 
                 s_logger.error(errMsg);
-
                 throw new CloudRuntimeException(errMsg);
             }
         } finally {
             if (getHypervisorRequiresResignature(volumeInfo)) {
                 if (hostId != null) {
-                    HostVO hostVO = hostDao.findById(hostId);
-                    DataStore dataStore = dataStoreMgr.getDataStore(volumeInfo.getPoolId(), DataStoreRole.Primary);
+                    final HostVO hostVO = hostDao.findById(hostId);
+                    final DataStore dataStore = dataStoreMgr.getDataStore(volumeInfo.getPoolId(),
+                        DataStoreRole.Primary);
 
                     volService.grantAccess(volumeInfo, hostVO, dataStore);
-
                     modifyTarget(true, volumeInfo, hostId);
                 }
             }
-
             if (success) {
                 volumeInfo.stateTransit(Volume.Event.OperationSucceeded);
             } else {
                 volumeInfo.stateTransit(Volume.Event.OperationFailed);
             }
-
             snapshotDao.releaseFromLockTable(snapshotInfo.getId());
         }
+    }
+
+    /**
+     * Executes the SnapshotStrategyBase.revertSnapshot(SnapshotInfo) method, and handles the
+     * SnapshotVO table update and the Volume.Event state machine (RevertSnapshotRequested).
+     */
+    protected void executeRevertSnapshot(SnapshotInfo snapshotInfo, VolumeInfo volumeInfo) {
+        executeRevertSnapshot(snapshotInfo, volumeInfo, null);
     }
 
     private Long getHostId(VolumeInfo volumeInfo) {

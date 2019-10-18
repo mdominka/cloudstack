@@ -16,20 +16,19 @@
 // under the License.
 package com.cloud.storage.snapshot;
 
-import java.util.List;
-
-import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
-import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
-import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
-import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
-
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
+import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
 import org.apache.cloudstack.api.command.user.snapshot.UpdateSnapshotPolicyCmd;
+
+import java.util.List;
 
 public interface SnapshotApiService {
 
@@ -113,7 +112,10 @@ public interface SnapshotApiService {
      */
     Long getHostIdForSnapshotOperation(Volume vol);
 
-    Snapshot revertSnapshot(Long snapshotId);
+    Snapshot revertSnapshot(final Long snapshotId);
+
+    Snapshot revertSnapshot(final Long snapshotId, final Long volumeId, final String volumeName,
+        final String fileName);
 
     Snapshot backupSnapshotFromVmSnapshot(Long snapshotId, Long vmId, Long volumeId, Long vmSnapshotId);
 

@@ -53,6 +53,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.snapshot.BackupConfigurationVO;
 import com.cloud.vm.snapshot.dao.BackupConfigurationDao;
 import com.google.common.base.Preconditions;
+import com.solidfire.element.api.CreateSnapshotResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -899,6 +900,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     if (!s3config.isEmpty()) {
                         SolidFireUtil.startBulkVolumeRead(sfNewSnapshotId, sfConnection, sfVolumeId,
                             volumeInfo.getName(), s3config.get(0));
+                        updateSnapshot(snapshotInfo.getId(), sfNewSnapshotId, false);
                     }
                 }
                 updateSnapshotDetails(snapshotInfo.getId(), volumeInfo.getId(), sfVolumeId, sfNewSnapshotId, storagePoolId, sfVolumeSize);
@@ -941,6 +943,17 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         callback.complete(result);
+    }
+
+    private void updateSnapshot(final long csSnapshotId, final long sfSnapshotId,
+        final boolean s3BackupRestore) {
+        final SnapshotVO snapshot = snapshotDao.findById(csSnapshotId);
+        snapshot.setSfSnapshotId(sfSnapshotId);
+
+        if (s3BackupRestore && snapshot.getState().equals(State.Destroyed)) {
+            snapshot.setState(State.BackedUp);
+        }
+        snapshotDao.update(csSnapshotId, snapshot);
     }
 
     private void checkForMaxSnapshots(final SolidFireUtil.SolidFireConnection sfConnection , final long volumeId) {
@@ -1339,40 +1352,85 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void revertSnapshot(SnapshotInfo snapshot, SnapshotInfo snapshot2,
-        AsyncCompletionCallback<CommandResult> callback, final Boolean isS3Backup) {
-        VolumeInfo volumeInfo = snapshot.getBaseVolume();
+        AsyncCompletionCallback<CommandResult> callback, final Boolean isS3Backup,
+        final String fileName) {
+        final VolumeInfo volumeInfo = snapshot.getBaseVolume();
 
-        VolumeVO volumeVO = volumeDao.findById(volumeInfo.getId());
+        final VolumeVO volumeVO = volumeDao.findById(volumeInfo.getId());
 
-        if (volumeVO == null || volumeVO.getRemoved() != null) {
-            String errMsg = "The volume that the snapshot belongs to no longer exists.";
+        if ((volumeVO == null) || (volumeVO.getRemoved() != null)) {
+            final String errMsg = "The volume that the snapshot belongs to no longer exists.";
 
-            CommandResult commandResult = new CommandResult();
-
+            final CommandResult commandResult = new CommandResult();
             commandResult.setResult(errMsg);
 
             callback.complete(commandResult);
-
             return;
         }
 
-        SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(volumeVO.getPoolId(), storagePoolDetailsDao);
+        final SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(
+            volumeVO.getPoolId(), storagePoolDetailsDao);
 
-        long sfVolumeId = Long.parseLong(volumeInfo.getFolder());
+        final long sfVolumeId = Long.parseLong(volumeInfo.getFolder());
 
-        SnapshotDetailsVO snapshotDetails = snapshotDetailsDao.findDetail(snapshot.getId(), SolidFireUtil.SNAPSHOT_ID);
+        if (isS3Backup) {
+            final CommandResult result = revertSnapshotfromS3backup(sfConnection, volumeInfo,
+                volumeVO, fileName, snapshot);
+            callback.complete(result);
+            return;
+        }
+        final SnapshotDetailsVO snapshotDetails = snapshotDetailsDao.findDetail(snapshot.getId(),
+            SolidFireUtil.SNAPSHOT_ID);
 
-        long sfSnapshotId = Long.parseLong(snapshotDetails.getValue());
+        final long sfSnapshotId = Long.parseLong(snapshotDetails.getValue());
 
         SolidFireUtil.rollBackVolumeToSnapshot(sfConnection, sfVolumeId, sfSnapshotId);
 
-        SolidFireUtil.SolidFireVolume sfVolume = SolidFireUtil.getVolume(sfConnection, sfVolumeId);
+        final SolidFireUtil.SolidFireVolume sfVolume = SolidFireUtil.getVolume(sfConnection,
+            sfVolumeId);
+        updateVolumeDetails(volumeVO.getId(), sfVolume.getTotalSize(),
+            sfVolume.getScsiNaaDeviceId());
 
-        updateVolumeDetails(volumeVO.getId(), sfVolume.getTotalSize(), sfVolume.getScsiNaaDeviceId());
-
-        CommandResult commandResult = new CommandResult();
-
+        final CommandResult commandResult = new CommandResult();
         callback.complete(commandResult);
+    }
+
+    private CommandResult revertSnapshotfromS3backup(
+        final SolidFireUtil.SolidFireConnection sfConnection, final VolumeInfo volumeInfo,
+        final VolumeVO volumeVO, final String fileName, final SnapshotInfo snapshot) {
+        final List<BackupConfigurationVO> s3config = backupConfigurationDao.listAll();
+
+        if (!s3config.isEmpty()) {
+            final long sfVolumeId = Long.parseLong(volumeInfo.getFolder());
+
+            SolidFireUtil.startBulkVolumeWrite(sfConnection, sfVolumeId, volumeInfo.getName(),
+                s3config.get(0), fileName);
+
+            final SnapshotVO snapshotVO = snapshotDao.findById(snapshot.getId());
+            final long sfSnapshotId = snapshotVO.getSfSnapshotId();
+
+            final CreateSnapshotResult createResult = SolidFireUtil.rollBackVolumeToSnapshot(
+                sfConnection, sfVolumeId, sfSnapshotId);
+
+            final SolidFireUtil.SolidFireVolume sfVolume = SolidFireUtil.getVolume(sfConnection,
+                sfVolumeId);
+
+            updateVolumeDetails(volumeVO.getId(), sfVolume.getTotalSize(),
+                sfVolume.getScsiNaaDeviceId());
+
+            updateSnapshotDetails(snapshot.getId(), volumeInfo.getId(), sfVolumeId,
+                createResult.getSnapshotID(), volumeVO.getPoolId(), sfVolume.getTotalSize());
+
+            updateSnapshot(snapshotVO.getId(), createResult.getSnapshotID(), true);
+        }
+
+        final CommandResult commandResult = new CommandResult();
+        if (s3config.isEmpty()) {
+            final String errMsg = "The S3 backup configuration is missing.";
+            commandResult.setResult(errMsg);
+            commandResult.setSuccess(false);
+        }
+        return commandResult;
     }
 
     @Override

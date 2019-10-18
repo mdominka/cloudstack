@@ -28,6 +28,8 @@ public interface SnapshotService {
 
     boolean revertSnapshot(SnapshotInfo snapshot);
 
+    boolean revertSnapshot(final SnapshotInfo snapshotInfo, final String fileName);
+
     void syncVolumeSnapshotsToRegionStore(long volumeId, DataStore store);
 
     void cleanupVolumeDuringSnapshotFailure(Long volumeId, Long snapshotId);

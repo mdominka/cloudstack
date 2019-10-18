@@ -32,6 +32,8 @@ public interface SnapshotStrategy {
 
     boolean revertSnapshot(SnapshotInfo snapshot);
 
+    boolean revertSnapshot(final SnapshotInfo snapshotInfo, final String fileName);
+
     StrategyPriority canHandle(Snapshot snapshot, SnapshotOperation op);
 
     void postSnapshotCreation(SnapshotInfo snapshot);

@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.storage.snapshot;
 
+import static java.lang.String.format;
+import static java.util.Objects.isNull;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
@@ -59,6 +62,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -199,6 +203,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     StorageStrategyFactory _storageStrategyFactory;
     @Inject
     public TaggedResourceService taggedResourceService;
+    @Inject
+    private SnapshotDetailsDao _snapshotDetailsDao;
 
     private int _totalRetries;
     private int _pauseInterval;
@@ -272,32 +278,16 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
     @Override
-    public Snapshot revertSnapshot(Long snapshotId) {
+    public Snapshot revertSnapshot(final Long snapshotId) {
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
+
         if (snapshot == null) {
             throw new InvalidParameterValueException("No such snapshot");
         }
 
         VolumeVO volume = _volsDao.findById(snapshot.getVolumeId());
-        if (volume.getState() != Volume.State.Ready) {
-            throw new InvalidParameterValueException("The volume is not in Ready state.");
-        }
 
-        Long instanceId = volume.getInstanceId();
-
-        // If this volume is attached to an VM, then the VM needs to be in the stopped state
-        // in order to revert the volume
-        if (instanceId != null) {
-            UserVmVO vm = _vmDao.findById(instanceId);
-            if (vm.getState() != State.Stopped && vm.getState() != State.Shutdowned) {
-                throw new InvalidParameterValueException("The VM the specified disk is attached to is not in the shutdown state.");
-            }
-            // If target VM has associated VM snapshots then don't allow to revert from snapshot
-            List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(instanceId);
-            if (vmSnapshots.size() > 0) {
-                throw new InvalidParameterValueException("Unable to revert snapshot for VM, please remove VM snapshots before reverting VM from snapshot");
-            }
-        }
+        checkVolumeAndVMState(volume);
 
         DataStoreRole dataStoreRole = getDataStoreRole(snapshot, _snapshotStoreDao, dataStoreMgr);
 
@@ -322,6 +312,86 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             return snapshotInfo;
         }
         return null;
+    }
+
+    @Override
+    public Snapshot revertSnapshot(final Long snapshotId, final Long volumeId,
+        final String volumeName, final String fileName) {
+        if (isNull(snapshotId) && isNull(volumeId) && isNull(volumeName) && isNull(fileName)) {
+            throw new InvalidParameterValueException(format(
+                "Missing Snapshot_ID: %1$d, Volume_ID: %2$d, Volume_Name: %3$s or "
+                    + "File_Name: %4$s", snapshotId, volumeId, volumeName, fileName));
+        }
+        // snapshot already located on primary storage?
+        final long cloudStackSnapshotId = _snapshotDetailsDao.findDetails("snapshotid",
+            snapshotId.toString(), null).get(0).getResourceId();
+
+        if (cloudStackSnapshotId > 0L) {
+            return revertSnapshot(cloudStackSnapshotId);
+        }
+
+        final SearchCriteria<SnapshotVO> sc = _snapshotDao.createSearchCriteria();
+        sc.setParameters("sf_snapshot_id", snapshotId);
+        final SnapshotVO snapshot = _snapshotDao.findOneBy(sc);
+
+        if (isNull(snapshot)) {
+            throw new InvalidParameterValueException("No archived data found in snapshot table.");
+        }
+
+        final VolumeVO volume = _volsDao.findByVolumeNameAndFolder(volumeName, volumeId.toString())
+            .get(0);
+
+        checkVolumeAndVMState(volume);
+
+        final DataStoreRole role = getDataStoreRole(snapshot, _snapshotStoreDao, dataStoreMgr);
+        final SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshot.getId(), role);
+
+        if (isNull(snapshotInfo)) {
+            throw new CloudRuntimeException(
+                "snapshot:" + snapshot.getId() + " not exist in data store");
+        }
+
+        final SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(
+            snapshot, SnapshotOperation.REVERT);
+
+        if (snapshotStrategy == null) {
+            throw new CloudRuntimeException(
+                "Unable to find snaphot strategy to handle snapshot" + " with id '"
+                    + snapshot.getId() + '\'');
+        }
+
+        if (snapshotStrategy.revertSnapshot(snapshotInfo, fileName)) {
+            // update volume size and primary storage count
+            _resourceLimitMgr.decrementResourceCount(snapshot.getAccountId(),
+                ResourceType.primary_storage, volume.getSize() - snapshot.getSize());
+            volume.setSize(snapshot.getSize());
+            _volsDao.update(volume.getId(), volume);
+            return snapshotInfo;
+        }
+        return null;
+    }
+
+    private void checkVolumeAndVMState(final Volume volume) {
+        if (volume.getState() != Volume.State.Ready) {
+            throw new InvalidParameterValueException("The volume is not in Ready state.");
+        }
+        final Long instanceId = volume.getInstanceId();
+
+        // If this volume is attached to an VM, then the VM needs to be in the stopped state
+        // in order to revert the volume
+        if (instanceId != null) {
+            final UserVmVO vm = _vmDao.findById(instanceId);
+            if ((vm.getState() != State.Stopped) && (vm.getState() != State.Shutdowned)) {
+                throw new InvalidParameterValueException(
+                    "The VM the specified disk is attached to" + " is not in the shutdown state.");
+            }
+            // If target VM has associated VM snapshots then don't allow to revert from snapshot
+            final List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(instanceId);
+            if (!vmSnapshots.isEmpty()) {
+                throw new InvalidParameterValueException("Unable to revert snapshot for VM, "
+                    + "please remove VM snapshots before reverting VM from snapshot");
+            }
+        }
     }
 
     @Override

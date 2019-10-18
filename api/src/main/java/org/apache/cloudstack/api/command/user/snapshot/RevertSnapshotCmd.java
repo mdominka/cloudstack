@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.api.command.user.snapshot;
 
+import static java.util.Objects.nonNull;
+
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
@@ -49,9 +51,21 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
             required=true, description="The ID of the snapshot")
     private Long id;
 
+    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.LONG, description = "the id of "
+        + "the volume")
+    private Long volumeId;
+
+    @Parameter(name = ApiConstants.VOLUME_NAME, type = CommandType.STRING, description = "the "
+        + "name of the volume")
+    private String volumeName;
+
     @Parameter(name = ApiConstants.S3_BACKUP, type = CommandType.BOOLEAN, description = "is "
         + "snapshot backup location on s3 storage")
     private Boolean isS3Backup;
+
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of "
+        + "the manifest file")
+    private String fileName;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -101,11 +115,17 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Snapshot Id: " + this._uuidMgr.getUuid(Snapshot.class, getId()));
-        final Boolean isS3Backup = getS3Backup();
+        final Snapshot snapshot;
 
-        Snapshot snapshot = _snapshotService.revertSnapshot(getId());
+        if (nonNull(isS3Backup) && isS3Backup) {
+            snapshot = _snapshotService.revertSnapshot(getId(), getVolumeId(), getVolumeName(),
+                getFileName());
+        } else {
+            snapshot = _snapshotService.revertSnapshot(getId());
+        }
+
         if (snapshot != null) {
-            SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);
+            final SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
@@ -113,11 +133,35 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
         }
     }
 
-    public Boolean getS3Backup() {
+    public Boolean isS3Backup() {
         return isS3Backup;
     }
 
     public void setS3Backup(final Boolean s3Backup) {
         isS3Backup = s3Backup;
+    }
+
+    public Long getVolumeId() {
+        return volumeId;
+    }
+
+    public void setVolumeId(final Long volumeId) {
+        this.volumeId = volumeId;
+    }
+
+    public String getVolumeName() {
+        return volumeName;
+    }
+
+    public void setVolumeName(final String volumeName) {
+        this.volumeName = volumeName;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(final String fileName) {
+        this.fileName = fileName;
     }
 }

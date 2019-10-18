@@ -102,6 +102,9 @@ public class SnapshotVO implements Snapshot {
     @Column(name = "max_iops")
     Long maxIops;
 
+    @Column(name = "sf_snapshot_id")
+    private Long sfSnapshotId;
+
     public SnapshotVO() {
         uuid = UUID.randomUUID().toString();
     }
@@ -318,5 +321,13 @@ public class SnapshotVO implements Snapshot {
     @Override
     public Class<?> getEntityType() {
         return Snapshot.class;
+    }
+
+    public Long getSfSnapshotId() {
+        return sfSnapshotId;
+    }
+
+    public void setSfSnapshotId(final Long sfSnapshotId) {
+        this.sfSnapshotId = sfSnapshotId;
     }
 }

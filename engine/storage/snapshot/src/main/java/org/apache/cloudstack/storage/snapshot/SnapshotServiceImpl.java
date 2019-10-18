@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.storage.snapshot;
 
+import static java.util.Objects.nonNull;
+
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.storage.CreateSnapshotPayload;
@@ -425,7 +427,12 @@ public class SnapshotServiceImpl implements SnapshotService {
     }
 
     @Override
-    public boolean revertSnapshot(SnapshotInfo snapshot) {
+    public boolean revertSnapshot(final SnapshotInfo snapshot) {
+        return revertSnapshot(snapshot, null);
+    }
+
+    @Override
+    public boolean revertSnapshot(final SnapshotInfo snapshot, final String fileName) {
         SnapshotInfo snapshotOnPrimaryStore = _snapshotFactory.getSnapshot(snapshot.getId(), DataStoreRole.Primary);
         if (snapshotOnPrimaryStore == null) {
             throw new CloudRuntimeException("Cannot find an entry for snapshot " + snapshot.getId() + " on primary storage pools");
@@ -437,9 +444,9 @@ public class SnapshotServiceImpl implements SnapshotService {
         AsyncCallbackDispatcher<SnapshotServiceImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().revertSnapshotCallback(null, null)).setContext(context);
 
-        // ToDo: note isS3Backup
+
         ((PrimaryDataStoreDriver) store.getDriver()).revertSnapshot(snapshot,
-            snapshotOnPrimaryStore, caller, null);
+            snapshotOnPrimaryStore, caller, nonNull(fileName), fileName);
 
         SnapshotResult result = null;
         try {

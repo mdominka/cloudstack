@@ -1532,7 +1532,8 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
      */
     @Override
     public void revertSnapshot(SnapshotInfo snapshotInfo, SnapshotInfo snapshotOnPrimaryStore,
-        AsyncCompletionCallback<CommandResult> callback, final Boolean isS3Backup) {
+        AsyncCompletionCallback<CommandResult> callback, final Boolean isS3Backup,
+        final String fileName) {
 
         VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
         VolumeVO volumeVO = _volumeDao.findById(volumeInfo.getId());

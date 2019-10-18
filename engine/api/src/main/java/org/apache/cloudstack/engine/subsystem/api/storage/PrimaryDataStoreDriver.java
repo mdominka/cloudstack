@@ -69,7 +69,8 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
     void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback);
 
     void revertSnapshot(SnapshotInfo snapshotOnImageStore, SnapshotInfo snapshotOnPrimaryStore,
-        AsyncCompletionCallback<CommandResult> callback, final Boolean isS3Backup);
+        AsyncCompletionCallback<CommandResult> callback, final Boolean isS3Backup,
+        final String fileName);
 
     void handleQualityOfServiceForVolumeMigration(VolumeInfo volumeInfo, QualityOfServiceState qualityOfServiceState);
 }
