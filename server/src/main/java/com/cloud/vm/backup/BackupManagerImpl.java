@@ -25,8 +25,6 @@ import com.cloud.vm.snapshot.BackupConfigurationVO;
 import com.cloud.vm.snapshot.crypto.Aes;
 import com.cloud.vm.snapshot.dao.BackupConfigurationDao;
 import org.apache.cloudstack.api.command.user.backup.ListBackupCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.springframework.stereotype.Component;
 
@@ -41,19 +39,15 @@ import javax.inject.Inject;
 public class BackupManagerImpl extends ManagerBase implements BackupService {
 
     private static final String CLUSTER_PREFIX = "hci-cl01-nhjj/";
-    private static final String S3_START_RECORD = "manifest";
+  private static final String S3_MANIFEST_RECORD = "manifest";
 
-    @Inject
-    DataStoreManager _dataStoreMgr;
     @Inject
     private BackupConfigurationDao backupConfigurationDao;
     @Inject
     private StoragePoolDetailsDao storagePoolDetailsDao;
 
     @Override
-    public List<S3ObjectSummary> listBackups(ListBackupCmd cmd) {
-        List<PrimaryDataStore> stores =_dataStoreMgr.listPrimaryDataStores();
-
+    public List<S3ObjectSummary> listBackups(final ListBackupCmd cmd) {
         final BackupConfigurationVO config = backupConfigurationDao.listAll().get(0);
 
         if (Objects.isNull(config)){
@@ -71,7 +65,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
     }
 
     private List<S3ObjectSummary> doFilterS3Objects(final List<S3ObjectSummary> listDirectory) {
-      return listDirectory.stream().filter( s ->
-          s.getKey().toLowerCase().contains(S3_START_RECORD)).collect(Collectors.toList());
+      return listDirectory.stream().filter( s -> s.getKey()
+          .toLowerCase()
+          .contains(S3_MANIFEST_RECORD)).collect(Collectors.toList());
     }
 }

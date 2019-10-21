@@ -2677,12 +2677,12 @@
                     volumename: {
                         label: 'label.volume.name'
                     },
-                      volumeid: {
-                          label: 'label.volume.id'
-                      },
-                      snapshotid: {
-                          label: 'label.volume.snapshot.id'
-                      },
+                    volumeid: {
+                      label: 'label.volume.id'
+                    },
+                    snapshotid: {
+                      label: 'label.volume.snapshot.id'
+                    },
                     name: {
                       label: 'label.name'
                     },
@@ -2762,8 +2762,7 @@
                                 fields: [{
                                     name: {
                                         label: 'label.name'
-                                    }
-                                }, {
+                                    },
                                     volumename: {
                                         label: 'label.volume.name'
                                     },
@@ -2773,14 +2772,11 @@
                                     snapshotid: {
                                         label: 'label.volume.snapshot.id'
                                     },
-                                    name: {
-                                        label: 'label.name'
+                                  created: {
+                                    label: 'label.created'
                                     },
                                     state: {
                                         label: 'label.state'
-                                    },
-                                    created: {
-                                        label: 'label.created'
                                     }
                                 }],
 
@@ -2790,14 +2786,21 @@
                                 }),
 
                                 dataProvider: function (args) {
+                                  var data = {
+                                    snapshotid: args.context.backupsnapshots[0].snapshotid,
+                                    name: args.context.backupsnapshots[0].name,
+                                    volumename: args.context.backupsnapshots[0].volumename,
+                                    volumeid: args.context.backupsnapshots[0].volumeid,
+                                    created: args.context.backupsnapshots[0].created,
+                                    state: args.context.backupsnapshots[0].state
+                                  };
                                     $.ajax({
                                         url: createURL("listBackups&snapshotid=" + args.context.backupsnapshots[0].snapshotid),
                                         dataType: "json",
                                         async: true,
                                         success: function (json) {
-                                            var jsonObj = json.listbackupsresponse.backup;
                                             args.response.success({
-                                                data: jsonObj[0]
+                                              data: data
                                             });
                                         }
                                     });
