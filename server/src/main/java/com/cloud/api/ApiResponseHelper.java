@@ -325,7 +325,10 @@ import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
+import java.sql.Timestamp;
 import java.text.DecimalFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -663,7 +666,12 @@ public class ApiResponseHelper implements ResponseGenerator {
       } catch (final NumberFormatException ignore) {
       }
       backupResponse.setSnapshotId(snapshotId);
-      backupResponse.setCreationDate(backup.getLastModified().toString());
+
+      final LocalDateTime dateTime = new Timestamp(
+          backup.getLastModified().getTime()).toLocalDateTime();
+      final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+      backupResponse.setCreationDate(dateTime.format(formatter));
         backupResponse.setState("BackedUp");
 
       final int lastIndex = volumeInfo.lastIndexOf('-');

@@ -2697,6 +2697,23 @@
                       }
                     }
                   },
+                    advSearchFields: {
+                        name: {
+                            label: 'label.name'
+                        },
+                        volumename: {
+                            label: 'label.volume.name'
+                        },
+                        volumeid: {
+                            label: 'label.volume.id'
+                        },
+                        snapshotid: {
+                            label: 'label.volume.snapshot.id'
+                        },
+                        created: {
+                            label: 'label.created'
+                        }
+                    },
                   dataProvider: function(args) {
                     var data = {};
                     listViewDataProvider(args, data);
