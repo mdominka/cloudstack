@@ -114,13 +114,14 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Snapshot Id: " + this._uuidMgr.getUuid(Snapshot.class, getId()));
         final Snapshot snapshot;
 
         if (nonNull(isS3Backup) && isS3Backup) {
+            setEventDetails(isS3Backup);
             snapshot = _snapshotService.revertSnapshot(getId(), getVolumeId(), getVolumeName(),
                 getFileName());
         } else {
+            setEventDetails(false);
             snapshot = _snapshotService.revertSnapshot(getId());
         }
 
@@ -163,5 +164,14 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
 
     public void setFileName(final String fileName) {
         this.fileName = fileName;
+    }
+
+    private void setEventDetails(final boolean isS3Backup) {
+        Long snapshotId = getId();
+        if (isS3Backup) {
+            snapshotId = _snapshotService.findArchivedSnapshotFromSfSnapshotID(getId()).getId();
+        }
+        CallContext.current()
+            .setEventDetails("Snapshot Id: " + this._uuidMgr.getUuid(Snapshot.class, snapshotId));
     }
 }

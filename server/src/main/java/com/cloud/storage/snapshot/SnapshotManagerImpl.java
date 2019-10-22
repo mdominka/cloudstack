@@ -325,27 +325,21 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         // snapshot already located on primary storage?
         final long cloudStackSnapshotId = _snapshotDetailsDao.findDetails("snapshotid",
             snapshotId.toString(), null).get(0).getResourceId();
-
         if (cloudStackSnapshotId > 0L) {
             return revertSnapshot(cloudStackSnapshotId);
         }
 
-        final SearchCriteria<SnapshotVO> sc = _snapshotDao.createSearchCriteria();
-        sc.setParameters("sf_snapshot_id", snapshotId);
-        final SnapshotVO snapshot = _snapshotDao.findOneBy(sc);
-
+        final SnapshotVO snapshot = (SnapshotVO) findArchivedSnapshotFromSfSnapshotID(snapshotId);
         if (isNull(snapshot)) {
             throw new InvalidParameterValueException("No archived data found in snapshot table.");
         }
 
         final VolumeVO volume = _volsDao.findByVolumeNameAndFolder(volumeName, volumeId.toString())
             .get(0);
-
         checkVolumeAndVMState(volume);
 
         final DataStoreRole role = getDataStoreRole(snapshot, _snapshotStoreDao, dataStoreMgr);
         final SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshot.getId(), role);
-
         if (isNull(snapshotInfo)) {
             throw new CloudRuntimeException(
                 "snapshot:" + snapshot.getId() + " not exist in data store");
@@ -353,7 +347,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         final SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(
             snapshot, SnapshotOperation.REVERT);
-
         if (snapshotStrategy == null) {
             throw new CloudRuntimeException(
                 "Unable to find snaphot strategy to handle snapshot" + " with id '"
@@ -416,6 +409,13 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         return policyVO;
 
+    }
+
+    @Override
+    public Snapshot findArchivedSnapshotFromSfSnapshotID(final Long sfSnapshotId) {
+        final SearchCriteria<SnapshotVO> sc = _snapshotDao.createSearchCriteria();
+        sc.setParameters("sf_snapshot_id", sfSnapshotId);
+        return _snapshotDao.findOneBy(sc);
     }
 
     @Override
