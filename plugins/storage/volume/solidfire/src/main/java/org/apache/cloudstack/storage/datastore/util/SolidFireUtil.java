@@ -60,6 +60,7 @@ import com.solidfire.element.api.Snapshot;
 import com.solidfire.element.api.SolidFireElement;
 import com.solidfire.element.api.StartBulkVolumeReadRequest;
 import com.solidfire.element.api.StartBulkVolumeWriteRequest;
+import com.solidfire.element.api.StartBulkVolumeWriteResult;
 import com.solidfire.element.api.Volume;
 import com.solidfire.element.api.VolumeAccessGroup;
 import com.solidfire.jsvcgen.javautil.Optional;
@@ -1057,7 +1058,8 @@ public class SolidFireUtil {
         sfe.startBulkVolumeRead(request);
     }
 
-    public static Long startBulkVolumeWrite(final SolidFireConnection sfConnection,
+    public static StartBulkVolumeWriteResult startBulkVolumeWrite(
+        final SolidFireConnection sfConnection,
         final long volumeId, final String volumeName, final BackupConfigurationVO s3Config,
         final String fileName) {
 
@@ -1074,7 +1076,7 @@ public class SolidFireUtil {
             .optionalScriptParameters(scriptParameters)
             .build();
 
-        return getSolidFireElement(sfConnection).startBulkVolumeWrite(request).getAsyncHandle();
+        return getSolidFireElement(sfConnection).startBulkVolumeWrite(request);
     }
 
     public static List<Snapshot> getSnapshotList(final SolidFireUtil.SolidFireConnection connection,

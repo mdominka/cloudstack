@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.driver;
 
+import static java.util.Objects.nonNull;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -54,6 +56,7 @@ import com.cloud.vm.snapshot.BackupConfigurationVO;
 import com.cloud.vm.snapshot.dao.BackupConfigurationDao;
 import com.google.common.base.Preconditions;
 import com.solidfire.element.api.CreateSnapshotResult;
+import com.solidfire.element.api.StartBulkVolumeWriteResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -88,6 +91,10 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
@@ -102,6 +109,9 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final long MIN_IOPS_FOR_SNAPSHOT_VOLUME = 100L;
     private static final long MAX_IOPS_FOR_SNAPSHOT_VOLUME = 20000L;
     private static final int MAX_SNAPSHOTS = 40;
+    private static final long INITIAL_DELAY = 1L;
+    private static final long DELAY = 1L;
+    private static final long TIMEOUT = 5L;
 
     private static final String BASIC_SF_ID = "basicSfId";
 
@@ -1374,7 +1384,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         final long sfVolumeId = Long.parseLong(volumeInfo.getFolder());
 
         if (isS3Backup) {
-            final CommandResult result = revertSnapshotfromS3backup(sfConnection, volumeInfo,
+            final CommandResult result = revertSnapshotFromS3backup(sfConnection, volumeInfo,
                 volumeVO, fileName, snapshot);
             callback.complete(result);
             return;
@@ -1395,42 +1405,82 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         callback.complete(commandResult);
     }
 
-    private CommandResult revertSnapshotfromS3backup(
+    private CommandResult revertSnapshotFromS3backup(
         final SolidFireUtil.SolidFireConnection sfConnection, final VolumeInfo volumeInfo,
         final VolumeVO volumeVO, final String fileName, final SnapshotInfo snapshot) {
         final List<BackupConfigurationVO> s3config = backupConfigurationDao.listAll();
 
-        if (!s3config.isEmpty()) {
-            final long sfVolumeId = Long.parseLong(volumeInfo.getFolder());
-
-            SolidFireUtil.startBulkVolumeWrite(sfConnection, sfVolumeId, volumeInfo.getName(),
-                s3config.get(0), fileName);
-
-            final SnapshotVO snapshotVO = snapshotDao.findById(snapshot.getId());
-            final long sfSnapshotId = snapshotVO.getSfSnapshotId();
-
-            final CreateSnapshotResult createResult = SolidFireUtil.rollBackVolumeToSnapshot(
-                sfConnection, sfVolumeId, sfSnapshotId);
-
-            final SolidFireUtil.SolidFireVolume sfVolume = SolidFireUtil.getVolume(sfConnection,
-                sfVolumeId);
-
-            updateVolumeDetails(volumeVO.getId(), sfVolume.getTotalSize(),
-                sfVolume.getScsiNaaDeviceId());
-
-            updateSnapshotDetails(snapshot.getId(), volumeInfo.getId(), sfVolumeId,
-                createResult.getSnapshotID(), volumeVO.getPoolId(), sfVolume.getTotalSize());
-
-            updateSnapshot(snapshotVO.getId(), createResult.getSnapshotID(), true);
-        }
-
-        final CommandResult commandResult = new CommandResult();
         if (s3config.isEmpty()) {
+            final CommandResult commandResult = new CommandResult();
             final String errMsg = "The S3 backup configuration is missing.";
             commandResult.setResult(errMsg);
             commandResult.setSuccess(false);
+            return commandResult;
         }
+
+        final long sfVolumeId = Long.parseLong(volumeInfo.getFolder());
+
+        final StartBulkVolumeWriteResult writeResult = SolidFireUtil.startBulkVolumeWrite(
+            sfConnection, sfVolumeId, volumeInfo.getName(), s3config.get(0), fileName);
+
+        if (!waitForBulkVolumeWriteCompletion(writeResult)) {
+            final CommandResult commandResult = new CommandResult();
+            final String errMsg = "The BulkVolumeWrite operation on the Solidfire doesn't "
+                + "completed.";
+            commandResult.setResult(errMsg);
+            commandResult.setSuccess(false);
+            return commandResult;
+        }
+
+        final SnapshotVO snapshotVO = snapshotDao.findById(snapshot.getId());
+        final long sfSnapshotId = snapshotVO.getSfSnapshotId();
+
+        final CreateSnapshotResult snapshotResult = SolidFireUtil.rollBackVolumeToSnapshot(
+            sfConnection, sfVolumeId, sfSnapshotId);
+
+        final SolidFireUtil.SolidFireVolume sfVolume = SolidFireUtil.getVolume(sfConnection,
+            sfVolumeId);
+
+        updateVolumeDetails(volumeVO.getId(), sfVolume.getTotalSize(),
+            sfVolume.getScsiNaaDeviceId());
+
+        updateSnapshotDetails(snapshot.getId(), volumeInfo.getId(), sfVolumeId,
+            snapshotResult.getSnapshotID(), volumeVO.getPoolId(), sfVolume.getTotalSize());
+
+        updateSnapshot(snapshotVO.getId(), snapshotResult.getSnapshotID(), true);
+
+        final CommandResult commandResult = new CommandResult();
+        commandResult.setSuccess(true);
         return commandResult;
+    }
+
+    private boolean waitForBulkVolumeWriteCompletion(final StartBulkVolumeWriteResult writeResult) {
+        final Long[] asyncHandle = new Long[1];
+        final ScheduledExecutorService executorService =
+            Executors.newSingleThreadScheduledExecutor();
+
+        final Runnable task = new TimerTask() {
+            @Override
+            public void run() {
+                asyncHandle[0] = writeResult.getAsyncHandle();
+                if (nonNull(asyncHandle[0]) && (asyncHandle[0] == 1L)) {
+                    cancel();
+                    executorService.shutdown();
+                }
+            }
+        };
+
+        executorService.scheduleWithFixedDelay(task, INITIAL_DELAY, DELAY, TimeUnit.MINUTES);
+
+        try {
+            // min. execution time before force shutdown
+            executorService.awaitTermination(TIMEOUT, TimeUnit.MINUTES);
+            if (!executorService.isShutdown()) {
+                executorService.shutdown();
+            }
+        } catch (final InterruptedException ignore) {
+        }
+        return nonNull(asyncHandle[0]) && (asyncHandle[0] == 1L);
     }
 
     @Override
