@@ -17,6 +17,8 @@
 
 package com.cloud.vm.backup;
 
+import static java.util.Objects.isNull;
+
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.utils.component.ManagerBase;
@@ -30,7 +32,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -48,20 +49,21 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
 
     @Override
     public List<S3ObjectSummary> listBackups(final ListBackupCmd cmd) {
-        final BackupConfigurationVO config = backupConfigurationDao.listAll().get(0);
+      final List<BackupConfigurationVO> config = backupConfigurationDao.listAll();
 
-        if (Objects.isNull(config)){
+      if (isNull(config) || config.isEmpty()) {
             return new ArrayList<>();
         }
         final S3TO s3TO = new S3TO();
-        s3TO.setSecretKey(Aes.decrypt(config.getSecretKey()));
-        s3TO.setAccessKey(config.getAccessKey());
-        s3TO.setEndPoint(config.getEndpoint());
-        s3TO.setBucketName(config.getBucket());
+      s3TO.setSecretKey(Aes.decrypt(config.get(0).getSecretKey()));
+      s3TO.setAccessKey(config.get(0).getAccessKey());
+      s3TO.setEndPoint(config.get(0).getEndpoint());
+      s3TO.setBucketName(config.get(0).getBucket());
         s3TO.setHttps(true);
-        s3TO.setRegion(config.getRegion());
+      s3TO.setRegion(config.get(0).getRegion());
 
-        return doFilterS3Objects(S3Utils.listDirectory(s3TO, config.getBucket(), CLUSTER_PREFIX));
+      return doFilterS3Objects(
+          S3Utils.listDirectory(s3TO, config.get(0).getBucket(), CLUSTER_PREFIX));
     }
 
     private List<S3ObjectSummary> doFilterS3Objects(final List<S3ObjectSummary> listDirectory) {

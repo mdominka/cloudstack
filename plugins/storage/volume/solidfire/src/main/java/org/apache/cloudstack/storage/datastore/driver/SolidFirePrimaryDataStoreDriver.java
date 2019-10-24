@@ -1449,6 +1449,8 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         updateSnapshot(snapshotVO.getId(), snapshotResult.getSnapshotID(), true);
 
+        // ToDo: update Snapshot_store_ref ?
+
         final CommandResult commandResult = new CommandResult();
         commandResult.setSuccess(true);
         return commandResult;

@@ -169,7 +169,11 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
     private void setEventDetails(final boolean isS3Backup) {
         Long snapshotId = getId();
         if (isS3Backup) {
-            snapshotId = _snapshotService.findArchivedSnapshotFromSfSnapshotID(getId()).getId();
+            final Snapshot snapshot = _snapshotService.findArchivedSnapshotFromSfSnapshotID(
+                getId());
+            if (nonNull(snapshot)) {
+                snapshotId = snapshot.getId();
+            }
         }
         CallContext.current()
             .setEventDetails("Snapshot Id: " + this._uuidMgr.getUuid(Snapshot.class, snapshotId));

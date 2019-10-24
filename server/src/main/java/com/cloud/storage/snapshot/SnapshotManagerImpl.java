@@ -18,6 +18,7 @@ package com.cloud.storage.snapshot;
 
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -63,6 +64,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -323,10 +325,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                     + "File_Name: %4$s", snapshotId, volumeId, volumeName, fileName));
         }
         // snapshot already located on primary storage?
-        final long cloudStackSnapshotId = _snapshotDetailsDao.findDetails("snapshotid",
-            snapshotId.toString(), null).get(0).getResourceId();
-        if (cloudStackSnapshotId > 0L) {
-            return revertSnapshot(cloudStackSnapshotId);
+        final List<SnapshotDetailsVO> snapshotDetails = _snapshotDetailsDao.findDetails(
+            "snapshotid", snapshotId.toString(), null);
+        if (nonNull(snapshotDetails) && !snapshotDetails.isEmpty()) {
+            return revertSnapshot(snapshotDetails.get(0).getResourceId());
         }
 
         final SnapshotVO snapshot = (SnapshotVO) findArchivedSnapshotFromSfSnapshotID(snapshotId);
