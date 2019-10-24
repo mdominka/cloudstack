@@ -19,6 +19,7 @@ package com.cloud.storage.snapshot;
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static org.apache.commons.lang3.ObjectUtils.allNotNull;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -291,7 +292,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         checkVolumeAndVMState(volume);
 
-        DataStoreRole dataStoreRole = getDataStoreRole(snapshot, _snapshotStoreDao, dataStoreMgr);
+        DataStoreRole dataStoreRole = getDataStoreRole(snapshot, _snapshotStoreDao, dataStoreMgr,
+            false);
 
         SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
         if (snapshotInfo == null) {
@@ -319,7 +321,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Override
     public Snapshot revertSnapshot(final Long snapshotId, final Long volumeId,
         final String volumeName, final String fileName) {
-        if (isNull(snapshotId) && isNull(volumeId) && isNull(volumeName) && isNull(fileName)) {
+        if (!allNotNull(snapshotId, volumeId, volumeName, fileName)) {
             throw new InvalidParameterValueException(format(
                 "Missing Snapshot_ID: %1$d, Volume_ID: %2$d, Volume_Name: %3$s or "
                     + "File_Name: %4$s", snapshotId, volumeId, volumeName, fileName));
@@ -340,7 +342,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             .get(0);
         checkVolumeAndVMState(volume);
 
-        final DataStoreRole role = getDataStoreRole(snapshot, _snapshotStoreDao, dataStoreMgr);
+        final DataStoreRole role = getDataStoreRole(snapshot, _snapshotStoreDao, dataStoreMgr,
+            true);
         final SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshot.getId(), role);
         if (isNull(snapshotInfo)) {
             throw new CloudRuntimeException(
@@ -653,7 +656,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             return false;
         }
 
-        DataStoreRole dataStoreRole = getDataStoreRole(snapshotCheck, _snapshotStoreDao, dataStoreMgr);
+        DataStoreRole dataStoreRole = getDataStoreRole(snapshotCheck, _snapshotStoreDao,
+            dataStoreMgr, false);
 
         SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, dataStoreRole);
 
@@ -1245,7 +1249,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             try {
                 postCreateSnapshot(volume.getId(), snapshotId, payload.getSnapshotPolicyId());
 
-                DataStoreRole dataStoreRole = getDataStoreRole(snapshot, _snapshotStoreDao, dataStoreMgr);
+                DataStoreRole dataStoreRole = getDataStoreRole(snapshot, _snapshotStoreDao,
+                    dataStoreMgr, false);
 
                 SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, dataStoreRole);
                 if (snapshotStoreRef == null) {
@@ -1339,8 +1344,15 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
     }
 
-    private DataStoreRole getDataStoreRole(Snapshot snapshot, SnapshotDataStoreDao snapshotStoreDao, DataStoreManager dataStoreMgr) {
-        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
+    private DataStoreRole getDataStoreRole(Snapshot snapshot, SnapshotDataStoreDao snapshotStoreDao,
+        DataStoreManager dataStoreMgr, final boolean isS3Backup) {
+        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshot.getId(),
+            DataStoreRole.Primary);
+
+        if (allNotNull(snapshotStore) && isS3Backup) {
+            snapshotStore = snapshotStoreDao.findDestroyedBySnapshotIdAndRole(snapshot.getId(),
+                DataStoreRole.Primary);
+        }
 
         if (snapshotStore == null) {
             return DataStoreRole.Image;
