@@ -331,7 +331,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             return revertSnapshot(snapshotDetails.get(0).getResourceId());
         }
 
-        final SnapshotVO snapshot = (SnapshotVO) findArchivedSnapshotFromSfSnapshotID(snapshotId);
+        final Snapshot snapshot = findArchivedSnapshotFromSfSnapshotID(snapshotId);
         if (isNull(snapshot)) {
             throw new InvalidParameterValueException("No archived data found in snapshot table.");
         }
@@ -358,8 +358,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (snapshotStrategy.revertSnapshot(snapshotInfo, fileName)) {
             // update volume size and primary storage count
             _resourceLimitMgr.decrementResourceCount(snapshot.getAccountId(),
-                ResourceType.primary_storage, volume.getSize() - snapshot.getSize());
-            volume.setSize(snapshot.getSize());
+                ResourceType.primary_storage, volume.getSize() - ((SnapshotVO) snapshot).getSize());
+            volume.setSize(((SnapshotVO) snapshot).getSize());
             _volsDao.update(volume.getId(), volume);
             return snapshotInfo;
         }
@@ -415,9 +415,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     @Override
     public Snapshot findArchivedSnapshotFromSfSnapshotID(final Long sfSnapshotId) {
-        final SearchCriteria<SnapshotVO> sc = _snapshotDao.createSearchCriteria();
-        sc.setParameters("sf_snapshot_id", sfSnapshotId);
-        return _snapshotDao.findOneBy(sc);
+        final List<SnapshotVO> snapshots = _snapshotDao.listBySfSnapshotId(sfSnapshotId);
+        if (nonNull(snapshots) && !snapshots.isEmpty()) {
+            return snapshots.get(0);
+        }
+        return null;
     }
 
     @Override

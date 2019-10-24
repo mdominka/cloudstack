@@ -16,16 +16,6 @@
 // under the License.
 package com.cloud.storage.dao;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.List;
-
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
@@ -48,6 +38,15 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.List;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 
 @Component
 public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements SnapshotDao {
@@ -65,6 +64,8 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private SearchBuilder<SnapshotVO> StatusSearch;
     private SearchBuilder<SnapshotVO> notInStatusSearch;
     private GenericSearchBuilder<SnapshotVO, Long> CountSnapshotsByAccount;
+    private SearchBuilder<SnapshotVO> sfSnapshotIdSearch;
+
     @Inject
     ResourceTagDao _tagsDao;
     @Inject
@@ -177,6 +178,11 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
 
         InstanceIdSearch.join("instanceSnapshots", volumeSearch, volumeSearch.entity().getId(), InstanceIdSearch.entity().getVolumeId(), JoinType.INNER);
         InstanceIdSearch.done();
+
+        sfSnapshotIdSearch = createSearchBuilder();
+        sfSnapshotIdSearch.and("sfSnapshotId", sfSnapshotIdSearch.entity().getSfSnapshotId(),
+            SearchCriteria.Op.EQ);
+        sfSnapshotIdSearch.done();
     }
 
     @Override
@@ -274,6 +280,13 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         SearchCriteria<SnapshotVO> sc = this.notInStatusSearch.create();
         sc.setParameters("volumeId", volumeId);
         sc.setParameters("status", (Object[]) status);
+        return listBy(sc, null);
+    }
+
+    @Override
+    public List<SnapshotVO> listBySfSnapshotId(final long sfSnapshotId) {
+        final SearchCriteria<SnapshotVO> sc = sfSnapshotIdSearch.create();
+        sc.setParameters("sfSnapshotId", sfSnapshotId);
         return listBy(sc, null);
     }
 }
