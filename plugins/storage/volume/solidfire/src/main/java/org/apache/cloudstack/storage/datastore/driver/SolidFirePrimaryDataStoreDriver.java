@@ -1452,7 +1452,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         updateSnapshotDetails(snapshot.getId(), volumeInfo.getId(), sfVolumeId,
             snapshotResult.getSnapshotID(), volumeVO.getPoolId(), sfVolume.getTotalSize());
 
-      updateSnapshotDataStore(snapshot.getId(), snapshot.getDataStore().getRole());
+        updateSnapshotDataStore(snapshot.getId(), snapshot.getDataStore().getRole());
 
         updateSnapshot(snapshotVO.getId(), snapshotResult.getSnapshotID(), true);
 
@@ -1461,13 +1461,13 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return commandResult;
     }
 
-  private void updateSnapshotDataStore(final long id, final DataStoreRole role) {
-    final SnapshotDataStoreVO dataStore = snapshotDataStoreDao.findBySnapshot(id, role);
-    if ((dataStore != null) && dataStore.getState().equals(Destroyed)) {
-      dataStore.setState(Ready);
-      snapshotDataStoreDao.update(id, dataStore);
+    private void updateSnapshotDataStore(final long id, final DataStoreRole role) {
+        final SnapshotDataStoreVO dataStore = snapshotDataStoreDao.findBySnapshot(id, role);
+        if ((dataStore != null) && dataStore.getState().equals(Destroyed)) {
+            dataStore.setState(Ready);
+            snapshotDataStoreDao.update(id, dataStore);
+        }
     }
-  }
 
     private boolean waitForBulkVolumeWriteCompletion(final StartBulkVolumeWriteResult writeResult) {
         final Long[] asyncHandle = new Long[1];
@@ -1478,7 +1478,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             @Override
             public void run() {
                 asyncHandle[0] = writeResult.getAsyncHandle();
-                if (nonNull(asyncHandle[0]) && (asyncHandle[0] == 1L)) {
+                if (nonNull(asyncHandle[0]) && (asyncHandle[0] >= 1L)) {
                     cancel();
                     executorService.shutdown();
                 }
@@ -1494,7 +1494,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
         } catch (final InterruptedException ignore) {
         }
-        return nonNull(asyncHandle[0]) && (asyncHandle[0] == 1L);
+        return nonNull(asyncHandle[0]) && (asyncHandle[0] >= 1L);
     }
 
     @Override
