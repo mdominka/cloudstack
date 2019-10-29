@@ -17,6 +17,8 @@
 package org.apache.cloudstack.storage.datastore.driver;
 
 import static java.util.Objects.nonNull;
+import static org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State.Destroyed;
+import static org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State.Ready;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -64,7 +66,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
@@ -395,7 +396,9 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
         }
 
-        List<SnapshotDataStoreVO> snapshotDataStoreVOList = snapshotDataStoreDao.listByStoreIdAndState(storagePool.getId(), ObjectInDataStoreStateMachine.State.Ready);
+      List<SnapshotDataStoreVO> snapshotDataStoreVOList =
+          snapshotDataStoreDao.listByStoreIdAndState(
+          storagePool.getId(), Ready);
 
         if (snapshotDataStoreVOList != null) {
             for (SnapshotDataStoreVO snapshot : snapshotDataStoreVOList) {
@@ -405,7 +408,9 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
         }
 
-        List<VMTemplateStoragePoolVO> vmTemplateStoragePoolVOList = vmTemplatePoolDao.listByPoolIdAndState(storagePool.getId(), ObjectInDataStoreStateMachine.State.Ready);
+      List<VMTemplateStoragePoolVO> vmTemplateStoragePoolVOList =
+          vmTemplatePoolDao.listByPoolIdAndState(
+          storagePool.getId(), Ready);
 
         if (vmTemplateStoragePoolVOList != null) {
             for (VMTemplateStoragePoolVO template : vmTemplateStoragePoolVOList) {
@@ -1447,14 +1452,22 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         updateSnapshotDetails(snapshot.getId(), volumeInfo.getId(), sfVolumeId,
             snapshotResult.getSnapshotID(), volumeVO.getPoolId(), sfVolume.getTotalSize());
 
-        updateSnapshot(snapshotVO.getId(), snapshotResult.getSnapshotID(), true);
+      updateSnapshotDataStore(snapshot.getId(), snapshot.getDataStore().getRole());
 
-        // ToDo: update Snapshot_store_ref ?
+        updateSnapshot(snapshotVO.getId(), snapshotResult.getSnapshotID(), true);
 
         final CommandResult commandResult = new CommandResult();
         commandResult.setSuccess(true);
         return commandResult;
     }
+
+  private void updateSnapshotDataStore(final long id, final DataStoreRole role) {
+    final SnapshotDataStoreVO dataStore = snapshotDataStoreDao.findBySnapshot(id, role);
+    if ((dataStore != null) && dataStore.getState().equals(Destroyed)) {
+      dataStore.setState(Ready);
+      snapshotDataStoreDao.update(id, dataStore);
+    }
+  }
 
     private boolean waitForBulkVolumeWriteCompletion(final StartBulkVolumeWriteResult writeResult) {
         final Long[] asyncHandle = new Long[1];
@@ -1471,7 +1484,6 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 }
             }
         };
-
         executorService.scheduleWithFixedDelay(task, INITIAL_DELAY, DELAY, TimeUnit.MINUTES);
 
         try {
