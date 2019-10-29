@@ -239,7 +239,7 @@ public class SolidFireUtil {
         return new SolidFireConnection(mVip, mPort, clusterAdminUsername, clusterAdminPassword);
     }
 
-    private static SolidFireElement getSolidFireElement(SolidFireConnection sfConnection) {
+    public static SolidFireElement getSolidFireElement(SolidFireConnection sfConnection) {
         return ElementFactory.create(sfConnection.getManagementVip(), sfConnection.getClusterAdminUsername(), sfConnection.getClusterAdminPassword());
     }
 

@@ -57,7 +57,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.snapshot.BackupConfigurationVO;
 import com.cloud.vm.snapshot.dao.BackupConfigurationDao;
 import com.google.common.base.Preconditions;
+import com.solidfire.element.api.AsyncResult;
 import com.solidfire.element.api.CreateSnapshotResult;
+import com.solidfire.element.api.SolidFireElement;
 import com.solidfire.element.api.StartBulkVolumeWriteResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -112,7 +114,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final int MAX_SNAPSHOTS = 40;
     private static final long INITIAL_DELAY = 1L;
     private static final long DELAY = 1L;
-    private static final long TIMEOUT = 5L;
+    private static final long TIMEOUT = 10L;
 
     private static final String BASIC_SF_ID = "basicSfId";
 
@@ -1424,11 +1426,10 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         final long sfVolumeId = Long.parseLong(volumeInfo.getFolder());
-
         final StartBulkVolumeWriteResult writeResult = SolidFireUtil.startBulkVolumeWrite(
             sfConnection, sfVolumeId, volumeInfo.getName(), s3config.get(0), fileName);
 
-        if (!waitForBulkVolumeWriteCompletion(writeResult)) {
+        if (!waitForBulkVolumeWriteCompletion(sfConnection, writeResult)) {
             final CommandResult commandResult = new CommandResult();
             final String errMsg = "The BulkVolumeWrite operation on the Solidfire doesn't "
                 + "completed.";
@@ -1469,16 +1470,23 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
     }
 
-    private boolean waitForBulkVolumeWriteCompletion(final StartBulkVolumeWriteResult writeResult) {
-        final Long[] asyncHandle = new Long[1];
-        final ScheduledExecutorService executorService =
-            Executors.newSingleThreadScheduledExecutor();
+    private boolean waitForBulkVolumeWriteCompletion(final SolidFireUtil.SolidFireConnection sfConnection,
+        final StartBulkVolumeWriteResult writeResult) {
+        final String[] jobStatus = new String[2];
+        final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+        final SolidFireElement element = SolidFireUtil.getSolidFireElement(sfConnection);
 
         final Runnable task = new TimerTask() {
             @Override
             public void run() {
-                asyncHandle[0] = writeResult.getAsyncHandle();
-                if (nonNull(asyncHandle[0]) && (asyncHandle[0] >= 1L)) {
+                jobStatus[0] = element.getAsyncResult(writeResult.getAsyncHandle()).getStatus();
+
+                if ((jobStatus[0] != null) && jobStatus[0].equalsIgnoreCase("complete")) {
+                    final AsyncResult result =
+                        element.getAsyncResult(writeResult.getAsyncHandle()).getResult();
+                    if (result != null) {
+                        jobStatus[1] = result.getMessage();
+                    }
                     cancel();
                     executorService.shutdown();
                 }
@@ -1494,7 +1502,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
         } catch (final InterruptedException ignore) {
         }
-        return nonNull(asyncHandle[0]) && (asyncHandle[0] >= 1L);
+        return nonNull(jobStatus[1]);
     }
 
     @Override
