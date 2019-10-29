@@ -1349,7 +1349,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshot.getId(),
             DataStoreRole.Primary);
 
-        if (allNotNull(snapshotStore) && isS3Backup) {
+        if ((snapshotStore == null) && isS3Backup) {
             snapshotStore = snapshotStoreDao.findDestroyedBySnapshotIdAndRole(snapshot.getId(),
                 DataStoreRole.Primary);
         }
