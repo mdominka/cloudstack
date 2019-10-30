@@ -57,8 +57,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.snapshot.BackupConfigurationVO;
 import com.cloud.vm.snapshot.dao.BackupConfigurationDao;
 import com.google.common.base.Preconditions;
-import com.solidfire.element.api.AsyncResult;
 import com.solidfire.element.api.CreateSnapshotResult;
+import com.solidfire.element.api.GetAsyncResultResult;
 import com.solidfire.element.api.SolidFireElement;
 import com.solidfire.element.api.StartBulkVolumeWriteResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
@@ -112,7 +112,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final long MIN_IOPS_FOR_SNAPSHOT_VOLUME = 100L;
     private static final long MAX_IOPS_FOR_SNAPSHOT_VOLUME = 20000L;
     private static final int MAX_SNAPSHOTS = 40;
-    private static final long INITIAL_DELAY = 1L;
+    private static final long INITIAL_DELAY = 2L;
     private static final long DELAY = 1L;
     private static final long TIMEOUT = 10L;
 
@@ -1479,17 +1479,20 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         final Runnable task = new TimerTask() {
             @Override
             public void run() {
-                jobStatus[0] = element.getAsyncResult(writeResult.getAsyncHandle()).getStatus();
+                final GetAsyncResultResult result = element.getAsyncResult(writeResult.getAsyncHandle());
 
-                if ((jobStatus[0] != null) && jobStatus[0].equalsIgnoreCase("complete")) {
-                    final AsyncResult result =
-                        element.getAsyncResult(writeResult.getAsyncHandle()).getResult();
-                    if (result != null) {
-                        jobStatus[1] = result.getMessage();
+                if (result != null) {
+                    jobStatus[0] = result.getStatus();
+
+                    if (result.getResult() != null) {
+                        jobStatus[1] = result.getResult().getMessage();
                     }
-                    cancel();
+                }
+
+                if ((jobStatus[0] != null) && jobStatus[0].equals("complete")) {
                     executorService.shutdown();
                 }
+                cancel();
             }
         };
         executorService.scheduleWithFixedDelay(task, INITIAL_DELAY, DELAY, TimeUnit.MINUTES);
