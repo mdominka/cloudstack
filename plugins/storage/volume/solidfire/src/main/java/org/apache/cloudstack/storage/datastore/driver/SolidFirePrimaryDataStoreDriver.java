@@ -19,6 +19,7 @@ package org.apache.cloudstack.storage.datastore.driver;
 import static java.util.Objects.nonNull;
 import static org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State.Destroyed;
 import static org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State.Ready;
+import static org.apache.commons.lang.StringUtils.isNotEmpty;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -1377,11 +1378,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         if ((volumeVO == null) || (volumeVO.getRemoved() != null)) {
             final String errMsg = "The volume that the snapshot belongs to no longer exists.";
-
-            final CommandResult commandResult = new CommandResult();
-            commandResult.setResult(errMsg);
-
-            callback.complete(commandResult);
+            callback.complete(createResult(false, errMsg));
             return;
         }
 
@@ -1418,11 +1415,8 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         final List<BackupConfigurationVO> s3config = backupConfigurationDao.listAll();
 
         if (s3config.isEmpty()) {
-            final CommandResult commandResult = new CommandResult();
             final String errMsg = "The S3 backup configuration is missing.";
-            commandResult.setResult(errMsg);
-            commandResult.setSuccess(false);
-            return commandResult;
+            return createResult(false, errMsg);
         }
 
         final long sfVolumeId = Long.parseLong(volumeInfo.getFolder());
@@ -1430,12 +1424,9 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             sfConnection, sfVolumeId, volumeInfo.getName(), s3config.get(0), fileName);
 
         if (!waitForBulkVolumeWriteCompletion(sfConnection, writeResult)) {
-            final CommandResult commandResult = new CommandResult();
             final String errMsg = "The BulkVolumeWrite operation on the Solidfire doesn't "
                 + "completed.";
-            commandResult.setResult(errMsg);
-            commandResult.setSuccess(false);
-            return commandResult;
+            return createResult(false, errMsg);
         }
 
         final SnapshotVO snapshotVO = snapshotDao.findById(snapshot.getId());
@@ -1457,9 +1448,16 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         updateSnapshot(snapshotVO.getId(), snapshotResult.getSnapshotID(), true);
 
-        final CommandResult commandResult = new CommandResult();
-        commandResult.setSuccess(true);
-        return commandResult;
+        return createResult(true, null);
+    }
+
+    private CommandResult createResult(final boolean success, final String message ) {
+        final  CommandResult result = new CommandResult();
+        result.setSuccess(success);
+        if (isNotEmpty(message)) {
+            result.setResult(message);
+        }
+        return result;
     }
 
     private void updateSnapshotDataStore(final long id, final DataStoreRole role) {
