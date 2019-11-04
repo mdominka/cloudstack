@@ -16,10 +16,12 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.driver;
 
+import static java.lang.Integer.parseInt;
 import static java.util.Objects.nonNull;
 import static org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State.Destroyed;
 import static org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State.Ready;
 import static org.apache.commons.lang.StringUtils.isNotEmpty;
+import static org.apache.commons.lang3.math.NumberUtils.isParsable;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -49,6 +51,7 @@ import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.AccountDetailVO;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountVO;
@@ -91,7 +94,6 @@ import org.apache.log4j.Logger;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -112,7 +114,6 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final long MAX_IOPS_FOR_MIGRATING_VOLUME = 20000L;
     private static final long MIN_IOPS_FOR_SNAPSHOT_VOLUME = 100L;
     private static final long MAX_IOPS_FOR_SNAPSHOT_VOLUME = 20000L;
-    private static final int MAX_SNAPSHOTS = 40;
     private static final long INITIAL_DELAY = 2L;
     private static final long DELAY = 1L;
     private static final long TIMEOUT = 10L;
@@ -908,7 +909,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     sfNewSnapshotName = StringUtils.left(volumeInfo.getName(), (volumeInfo.getName().length() - trimRequired)) + "-" + snapshotInfo.getUuid();
                 }
 
-                checkForMaxSnapshots(sfConnection, sfVolumeId);
+                checkMaxSnapshots(sfConnection, sfVolumeId);
 
                 final long sfNewSnapshotId = SolidFireUtil.createSnapshot(sfConnection, sfVolumeId,
                     SolidFireUtil.getSolidFireVolumeName(sfNewSnapshotName), getSnapshotAttributes(snapshotInfo));
@@ -974,17 +975,12 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         snapshotDao.update(csSnapshotId, snapshot);
     }
 
-    private void checkForMaxSnapshots(final SolidFireUtil.SolidFireConnection sfConnection , final long volumeId) {
+    private boolean checkMaxSnapshots(final SolidFireUtil.SolidFireConnection sfConnection , final long volumeId) {
         final List<com.solidfire.element.api.Snapshot> snapshots = SolidFireUtil.getSnapshotList(sfConnection, volumeId);
 
-        if (snapshots.size() >= MAX_SNAPSHOTS) {
-            snapshots.sort(Comparator.comparing(com.solidfire.element.api.Snapshot::getCreateTime));
-            final long snapshotId = snapshots.get(0).getSnapshotID();
+        final String maxSnapshots = _configDao.getValue(SnapshotManager.MaximumSnapshotsOnSolidfire.key());
 
-            //SolidFireUtil.deleteSnapshot(sfConnection, snapshotId);
-            LOGGER.info("The maximum number of snapshots (" + MAX_SNAPSHOTS + ") for volume: (" + volumeId + ") has been reached."
-                + " Therefore, the oldest snapshot with ID: " + snapshotId + " was deleted.");
-        }
+        return isParsable(maxSnapshots) && (snapshots.size() >= parseInt(maxSnapshots));
     }
 
     private void updateSnapshotDetails(long csSnapshotId, long csVolumeId, long sfVolumeId, long sfNewSnapshotId, long storagePoolId, long sfNewVolumeSize) {
@@ -1420,6 +1416,13 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         final long sfVolumeId = Long.parseLong(volumeInfo.getFolder());
+
+        if (!checkMaxSnapshots(sfConnection, sfVolumeId)) {
+            final String errMsg = "The maximum number of snapshots on the Solidfire has been reached."
+                + "Please delete a snapshot first.";
+            return createResult(false, errMsg);
+        }
+
         final StartBulkVolumeWriteResult writeResult = SolidFireUtil.startBulkVolumeWrite(
             sfConnection, sfVolumeId, volumeInfo.getName(), s3config.get(0), fileName);
 
