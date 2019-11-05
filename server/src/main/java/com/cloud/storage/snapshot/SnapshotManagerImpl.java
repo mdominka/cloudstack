@@ -338,8 +338,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             throw new InvalidParameterValueException("No archived data found in snapshot table.");
         }
 
-        final VolumeVO volume = _volsDao.findByVolumeNameAndFolder(volumeName, volumeId.toString())
-            .get(0);
+        final VolumeVO volume = _volsDao.findByVolumeNameAndFolder(volumeName, volumeId.toString());
+
         checkVolumeAndVMState(volume);
 
         final DataStoreRole role = getDataStoreRole(snapshot, _snapshotStoreDao, dataStoreMgr,
@@ -370,6 +370,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
     private void checkVolumeAndVMState(final Volume volume) {
+        if (volume == null) {
+            throw new InvalidParameterValueException("No such volume exist.");
+        }
+
         if (volume.getState() != Volume.State.Ready) {
             throw new InvalidParameterValueException("The volume is not in Ready state.");
         }

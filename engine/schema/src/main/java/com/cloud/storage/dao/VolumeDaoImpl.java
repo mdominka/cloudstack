@@ -242,12 +242,12 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
-    public List<VolumeVO> findByVolumeNameAndFolder(final String volumeName, final String folder) {
+    public VolumeVO findByVolumeNameAndFolder(final String volumeName, final String folder) {
         final SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("name", volumeName);
         sc.setParameters("folder", folder);
 
-        return listBy(sc);
+        return findOneBy(sc);
     }
 
     @Override

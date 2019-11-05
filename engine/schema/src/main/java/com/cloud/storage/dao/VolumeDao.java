@@ -96,7 +96,7 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<Long> listZoneWidePoolIdsByVolumeCount(long dcId, long accountId);
 
-    List<VolumeVO> findByVolumeNameAndFolder(final String volumeName, final String folder);
+    VolumeVO findByVolumeNameAndFolder(final String volumeName, final String folder);
 
     /**
      * Gets the Total Primary Storage space allocated for an account
