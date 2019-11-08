@@ -1009,17 +1009,13 @@ public class SolidFireUtil {
     }
 
     private static Map<String, Object> buildScriptParameters(
-        final GetClusterInfoResult clusterInfoResult, final long volumeId, final String volumeName,
+        final String clusterPrefix, final long volumeId, final String volumeName,
         final Map<String, String> parameters, final String fileName,
         final Boolean hasWriteParameters) {
 
         final Map<String, Integer> rangeParameters = new HashMap<>();
         rangeParameters.put("lba", 0);
         rangeParameters.put("blocks", 262144);
-
-        final StringJoiner clusterPrefix = new StringJoiner("-","","/");
-        clusterPrefix.add(clusterInfoResult.getClusterInfo().getName())
-          .add(clusterInfoResult.getClusterInfo().getUniqueID());
 
         final StringBuilder prefix = new StringBuilder();
         prefix.append(clusterPrefix).append(volumeName).append('-').append(volumeId);
@@ -1044,7 +1040,7 @@ public class SolidFireUtil {
         final SolidFireElement sfe = getSolidFireElement(sfConnection);
 
         final Map<String, String> parameters = buildS3Parameters(s3Config);
-        final Map<String, Object> scriptParameters = buildScriptParameters(sfe.getClusterInfo(),
+        final Map<String, Object> scriptParameters = buildScriptParameters(getClusterPrefix(sfConnection),
             volumeId, volumeName, parameters, null, true);
 
         final StartBulkVolumeReadRequest request = StartBulkVolumeReadRequest.builder()
@@ -1059,14 +1055,11 @@ public class SolidFireUtil {
     }
 
     public static StartBulkVolumeWriteResult startBulkVolumeWrite(
-        final SolidFireConnection sfConnection,
-        final long volumeId, final String volumeName, final BackupConfigurationVO s3Config,
-        final String fileName) {
-
-        final SolidFireElement sfe = getSolidFireElement(sfConnection);
+        final SolidFireConnection sfConnection, final long volumeId, final String volumeName,
+        final BackupConfigurationVO s3Config, final String fileName) {
 
         final Map<String, String> parameters = buildS3Parameters(s3Config);
-        final Map<String, Object> scriptParameters = buildScriptParameters(sfe.getClusterInfo(),
+        final Map<String, Object> scriptParameters = buildScriptParameters(getClusterPrefix(sfConnection),
             volumeId, volumeName, parameters, fileName, false);
 
         final StartBulkVolumeWriteRequest request = StartBulkVolumeWriteRequest.builder()
@@ -1077,6 +1070,18 @@ public class SolidFireUtil {
             .build();
 
         return getSolidFireElement(sfConnection).startBulkVolumeWrite(request);
+    }
+
+    public static String getClusterPrefix(final SolidFireConnection sfConnection) {
+        final SolidFireElement sfe = getSolidFireElement(sfConnection);
+
+        final GetClusterInfoResult clusterInfoResult = sfe.getClusterInfo();
+
+        final StringJoiner clusterPrefix = new StringJoiner("-","","/");
+        clusterPrefix.add(clusterInfoResult.getClusterInfo().getName())
+            .add(clusterInfoResult.getClusterInfo().getUniqueID());
+
+        return clusterPrefix.toString();
     }
 
     public static List<Snapshot> getSnapshotList(final SolidFireUtil.SolidFireConnection connection,
