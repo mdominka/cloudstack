@@ -18,30 +18,8 @@
  */
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
-import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
+import static org.apache.cloudstack.storage.datastore.util.SolidFireUtil.CLUSTER_PREFIX;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -71,6 +49,29 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
+import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
+import org.apache.log4j.Logger;
+
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
 
 public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
     private static final Logger LOGGER = Logger.getLogger(SolidFireSharedPrimaryDataStoreLifeCycle.class);
@@ -165,6 +166,12 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
 
         details.put(SolidFireUtil.CLUSTER_ADMIN_USERNAME, clusterAdminUsername);
         details.put(SolidFireUtil.CLUSTER_ADMIN_PASSWORD, clusterAdminPassword);
+
+        // get the value of the cluster prefix for the Solidfire
+        final String clusterPrefix = SolidFireUtil.getValue(CLUSTER_PREFIX, url, false);
+        if (isNotEmpty(clusterPrefix)) {
+            details.put(CLUSTER_PREFIX, clusterPrefix);
+        }
 
         if (capacityBytes < SolidFireUtil.MIN_VOLUME_SIZE) {
             capacityBytes = SolidFireUtil.MIN_VOLUME_SIZE;

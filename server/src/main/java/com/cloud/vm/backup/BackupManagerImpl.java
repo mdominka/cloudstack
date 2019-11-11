@@ -17,8 +17,6 @@
 
 package com.cloud.vm.backup;
 
-import static java.util.Objects.isNull;
-
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.utils.component.ManagerBase;
@@ -27,6 +25,7 @@ import com.cloud.vm.snapshot.BackupConfigurationVO;
 import com.cloud.vm.snapshot.crypto.Aes;
 import com.cloud.vm.snapshot.dao.BackupConfigurationDao;
 import org.apache.cloudstack.api.command.user.backup.ListBackupCmd;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.springframework.stereotype.Component;
 
@@ -39,8 +38,9 @@ import javax.inject.Inject;
 @Component
 public class BackupManagerImpl extends ManagerBase implements BackupService {
 
-  private static final String CLUSTER_PREFIX = "hci-cl01-nhjj/";
+  private static final String CLUSTER_PREFIX_DEFAULT = "hci-cl01-nhjj/";
   private static final String S3_MANIFEST_RECORD = "manifest";
+  private static final String CLUSTER_PREFIX = "clusterPrefix";
 
   @Inject
   private BackupConfigurationDao backupConfigurationDao;
@@ -51,9 +51,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
   public List<S3ObjectSummary> listBackups(final ListBackupCmd cmd) {
     final List<BackupConfigurationVO> config = backupConfigurationDao.listAll();
 
-    if (isNull(config) || config.isEmpty()) {
+    if ((config == null) || config.isEmpty()) {
       return new ArrayList<>();
     }
+
     final S3TO s3TO = new S3TO();
     s3TO.setSecretKey(Aes.decrypt(config.get(0).getSecretKey()));
     s3TO.setAccessKey(config.get(0).getAccessKey());
@@ -62,8 +63,18 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
     s3TO.setHttps(true);
     s3TO.setRegion(config.get(0).getRegion());
 
-    return doFilterS3Objects(
-        S3Utils.listDirectory(s3TO, config.get(0).getBucket(), CLUSTER_PREFIX));
+    final List<StoragePoolDetailVO> storagePoolDetails =
+        storagePoolDetailsDao.findDetails(CLUSTER_PREFIX, null, null);
+
+    if ((storagePoolDetails != null) && !storagePoolDetails.isEmpty()) {
+      final List<S3ObjectSummary> s3ObjectSummaries = new ArrayList<>();
+      storagePoolDetails.stream().map(StoragePoolDetailVO::getValue)
+          .forEach(value -> s3ObjectSummaries.addAll(doFilterS3Objects(S3Utils.listDirectory(s3TO,
+              config.get(0).getBucket(), value + '/'))));
+
+      return s3ObjectSummaries;
+    }
+    return doFilterS3Objects(S3Utils.listDirectory(s3TO, config.get(0).getBucket(), CLUSTER_PREFIX_DEFAULT));
   }
 
   private List<S3ObjectSummary> doFilterS3Objects(final List<S3ObjectSummary> listDirectory) {

@@ -115,6 +115,9 @@ public class SolidFireUtil {
     public static final String MAX_IOPS = "maxIops";
     public static final String BURST_IOPS = "burstIops";
 
+    // the cluster prefix from the Solidfire storage, is used to list the s3 backups.
+    public static final String CLUSTER_PREFIX = "clusterPrefix";
+
     private static final String ACCOUNT_ID = "accountId";
 
     public static final String VOLUME_ID = "volumeId";

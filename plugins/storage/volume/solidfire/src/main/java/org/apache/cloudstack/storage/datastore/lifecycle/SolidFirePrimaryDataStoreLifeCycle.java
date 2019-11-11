@@ -18,15 +18,27 @@
  */
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-
+import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.capacity.CapacityManager;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.resource.ResourceManager;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolAutomation;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.dao.SnapshotDetailsVO;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.common.base.Preconditions;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
@@ -39,29 +51,15 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.capacity.CapacityManager;
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.resource.ResourceManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.SnapshotDetailsDao;
-import com.cloud.storage.dao.SnapshotDetailsVO;
-import com.cloud.storage.dao.VMTemplatePoolDao;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePoolAutomation;
-import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
-import com.google.common.base.Preconditions;
+import javax.inject.Inject;
 
 public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
     private static final Logger s_logger = Logger.getLogger(SolidFirePrimaryDataStoreLifeCycle.class);
@@ -155,6 +153,12 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
 
         details.put(SolidFireUtil.CLUSTER_ADMIN_USERNAME, clusterAdminUsername);
         details.put(SolidFireUtil.CLUSTER_ADMIN_PASSWORD, clusterAdminPassword);
+
+        // get the value of the cluster prefix for the Solidfire
+        final String clusterPrefix = SolidFireUtil.getValue(SolidFireUtil.CLUSTER_PREFIX, url, false);
+        if (StringUtils.isNotEmpty(clusterPrefix)) {
+            details.put(SolidFireUtil.CLUSTER_PREFIX, clusterPrefix);
+        }
 
         long lClusterDefaultMinIops = 100;
         long lClusterDefaultMaxIops = 15000;
