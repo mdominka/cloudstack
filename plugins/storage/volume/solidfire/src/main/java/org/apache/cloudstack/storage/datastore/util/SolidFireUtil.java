@@ -50,6 +50,7 @@ import com.solidfire.element.api.GetAccountByNameRequest;
 import com.solidfire.element.api.GetAsyncResultRequest;
 import com.solidfire.element.api.GetClusterInfoResult;
 import com.solidfire.element.api.ListSnapshotsRequest;
+import com.solidfire.element.api.ListSnapshotsResult;
 import com.solidfire.element.api.ListVolumeAccessGroupsRequest;
 import com.solidfire.element.api.ListVolumesRequest;
 import com.solidfire.element.api.ModifyVolumeRequest;
@@ -1093,8 +1094,13 @@ public class SolidFireUtil {
             .optionalVolumeID(volumeId)
             .build();
 
-        return Arrays.asList(getSolidFireElement(connection)
-            .listSnapshots(snapshotsRequest).getSnapshots());
+        final ListSnapshotsResult snapshotsResult = getSolidFireElement(connection)
+            .listSnapshots(snapshotsRequest);
+
+        if ((snapshotsResult == null) || (snapshotsResult.getSnapshots() == null)) {
+            return new ArrayList<>();
+        }
+        return Arrays.asList(snapshotsResult.getSnapshots());
     }
 
     private static Map<String, String> buildS3Parameters(final BackupConfigurationVO s3config) {
