@@ -18,6 +18,7 @@
 package com.cloud.vm.backup;
 
 import static org.apache.commons.collections.CollectionUtils.isEmpty;
+import static org.apache.commons.collections.CollectionUtils.isNotEmpty;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.agent.api.to.S3TO;
@@ -68,7 +69,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
     final List<StoragePoolDetailVO> storagePoolDetails =
         storagePoolDetailsDao.findDetails(CLUSTER_PREFIX, null, null);
 
-    if ((storagePoolDetails != null) && !storagePoolDetails.isEmpty()) {
+    if (isNotEmpty(storagePoolDetails)) {
       final List<S3ObjectSummary> s3ObjectSummaries = new ArrayList<>();
       storagePoolDetails.stream().map(StoragePoolDetailVO::getValue)
           .forEach(value -> s3ObjectSummaries.addAll(doFilterS3Objects(S3Utils.listDirectory(s3TO,
