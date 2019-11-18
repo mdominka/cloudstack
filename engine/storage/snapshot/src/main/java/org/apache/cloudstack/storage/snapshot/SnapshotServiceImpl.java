@@ -17,7 +17,7 @@
 
 package org.apache.cloudstack.storage.snapshot;
 
-import static java.util.Objects.nonNull;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
@@ -446,7 +446,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 
 
         ((PrimaryDataStoreDriver) store.getDriver()).revertSnapshot(snapshot,
-            snapshotOnPrimaryStore, caller, nonNull(fileName), fileName);
+            snapshotOnPrimaryStore, caller, isNotBlank(fileName), fileName);
 
         SnapshotResult result = null;
         try {

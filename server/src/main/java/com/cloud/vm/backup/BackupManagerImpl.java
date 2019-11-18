@@ -17,6 +17,8 @@
 
 package com.cloud.vm.backup;
 
+import static org.apache.commons.collections.CollectionUtils.isEmpty;
+
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.utils.component.ManagerBase;
@@ -51,7 +53,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
   public List<S3ObjectSummary> listBackups(final ListBackupCmd cmd) {
     final List<BackupConfigurationVO> config = backupConfigurationDao.listAll();
 
-    if ((config == null) || config.isEmpty()) {
+    if (isEmpty(config)) {
       return new ArrayList<>();
     }
 

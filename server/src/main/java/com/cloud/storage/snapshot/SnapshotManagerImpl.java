@@ -17,8 +17,7 @@
 package com.cloud.storage.snapshot;
 
 import static java.lang.String.format;
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
+import static org.apache.commons.collections.CollectionUtils.isNotEmpty;
 import static org.apache.commons.lang3.ObjectUtils.allNotNull;
 
 import com.cloud.agent.api.Answer;
@@ -329,12 +328,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         // snapshot already located on primary storage?
         final List<SnapshotDetailsVO> snapshotDetails = _snapshotDetailsDao.findDetails(
             "snapshotid", snapshotId.toString(), null);
-        if (nonNull(snapshotDetails) && !snapshotDetails.isEmpty()) {
+        if (isNotEmpty(snapshotDetails)) {
             return revertSnapshot(snapshotDetails.get(0).getResourceId());
         }
 
         final Snapshot snapshot = findArchivedSnapshotFromSfSnapshotID(snapshotId);
-        if (isNull(snapshot)) {
+        if (snapshot == null) {
             throw new InvalidParameterValueException("No archived data found in snapshot table.");
         }
 
@@ -345,7 +344,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         final DataStoreRole role = getDataStoreRole(snapshot, _snapshotStoreDao, dataStoreMgr,
             true);
         final SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshot.getId(), role);
-        if (isNull(snapshotInfo)) {
+        if (snapshotInfo == null) {
             throw new CloudRuntimeException(
                 "snapshot:" + snapshot.getId() + " not exist in data store");
         }
@@ -423,7 +422,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Override
     public Snapshot findArchivedSnapshotFromSfSnapshotID(final Long sfSnapshotId) {
         final List<SnapshotVO> snapshots = _snapshotDao.listBySfSnapshotId(sfSnapshotId);
-        if (nonNull(snapshots) && !snapshots.isEmpty()) {
+        if (isNotEmpty(snapshots)) {
             return snapshots.get(0);
         }
         return null;

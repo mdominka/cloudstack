@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.vm.snapshot.dao;
 
-import static java.util.Objects.nonNull;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDaoBase;
@@ -62,13 +62,13 @@ public class BackupConfigurationDaoImpl extends GenericDaoBase<BackupConfigurati
         final SearchBuilder<BackupConfigurationVO> searchBuilder = getSearchBuilder(bucket, endpoint,
             accessKey);
         final SearchCriteria<BackupConfigurationVO> searchCriteria = searchBuilder.create();
-        if (nonNull(bucket)) {
+        if (isNotBlank(bucket)) {
             searchCriteria.setParameters("bucket", bucket);
         }
-        if (nonNull(endpoint)) {
+        if (isNotBlank(endpoint)) {
             searchCriteria.setParameters("endpoint", endpoint);
         }
-        if (nonNull(accessKey)) {
+        if (isNotBlank(accessKey)) {
             searchCriteria.setParameters("access_key", accessKey);
         }
         return searchCriteria;
@@ -78,13 +78,13 @@ public class BackupConfigurationDaoImpl extends GenericDaoBase<BackupConfigurati
         final String endpoint, final String accessKey){
 
         final SearchBuilder<BackupConfigurationVO> search = createSearchBuilder();
-        if (nonNull(bucket)){
+        if (isNotBlank(bucket)){
             search.and("bucket", search.entity().getBucket(), Op.EQ);
         }
-        if (nonNull(endpoint)){
+        if (isNotBlank(endpoint)){
             search.and("endpoint", search.entity().getEndpoint(), Op.EQ);
         }
-        if (nonNull(accessKey)){
+        if (isNotBlank(accessKey)){
             search.and("access_key", search.entity().getAccessKey(), Op.EQ);
         }
         search.done();

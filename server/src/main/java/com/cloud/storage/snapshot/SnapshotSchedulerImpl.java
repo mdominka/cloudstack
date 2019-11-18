@@ -62,7 +62,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -288,7 +287,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                     continue;
                 }
                 final SnapshotPolicyVO snapshotPolicy = _snapshotPolicyDao.findById(policyId);
-                if (Objects.isNull(snapshotPolicy)) {
+                if (snapshotPolicy == null) {
                     _snapshotScheduleDao.remove(snapshotToBeExecuted.getId());
                 }
                 if (s_logger.isDebugEnabled()) {

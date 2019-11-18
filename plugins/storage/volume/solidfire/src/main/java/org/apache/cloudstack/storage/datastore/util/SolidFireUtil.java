@@ -17,6 +17,7 @@
 package org.apache.cloudstack.storage.datastore.util;
 
 import static org.apache.commons.lang.ArrayUtils.toPrimitive;
+import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -78,7 +79,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -1023,7 +1023,7 @@ public class SolidFireUtil {
         final StringBuilder prefix = new StringBuilder();
         prefix.append(clusterPrefix).append(volumeName).append('-').append(volumeId);
 
-        if (Objects.nonNull(fileName)) {
+        if (isNotBlank(fileName)) {
             prefix.append('/').append(fileName);
         }
         parameters.put("prefix", prefix.toString());

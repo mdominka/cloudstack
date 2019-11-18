@@ -17,9 +17,9 @@
 package org.apache.cloudstack.storage.datastore.driver;
 
 import static java.lang.Integer.parseInt;
-import static java.util.Objects.nonNull;
 import static org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State.Destroyed;
 import static org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State.Ready;
+import static org.apache.commons.lang.StringUtils.isNotBlank;
 import static org.apache.commons.lang.StringUtils.isNotEmpty;
 import static org.apache.commons.lang3.math.NumberUtils.isParsable;
 
@@ -1506,7 +1506,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
         } catch (final InterruptedException ignore) {
         }
-        return nonNull(jobStatus[1]);
+        return isNotBlank(jobStatus[1]);
     }
 
     @Override

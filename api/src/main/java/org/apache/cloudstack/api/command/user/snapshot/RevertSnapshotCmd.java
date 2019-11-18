@@ -18,8 +18,6 @@
  */
 package org.apache.cloudstack.api.command.user.snapshot;
 
-import static java.util.Objects.nonNull;
-
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
@@ -116,7 +114,7 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
     public void execute() {
         final Snapshot snapshot;
 
-        if (nonNull(isS3Backup) && isS3Backup) {
+        if ((isS3Backup != null) && isS3Backup) {
             setEventDetails(isS3Backup);
             snapshot = _snapshotService.revertSnapshot(getId(), getVolumeId(), getVolumeName(),
                 getFileName());
@@ -171,7 +169,7 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
         if (isS3Backup) {
             final Snapshot snapshot = _snapshotService.findArchivedSnapshotFromSfSnapshotID(
                 getId());
-            if (nonNull(snapshot)) {
+            if (snapshot != null) {
                 snapshotId = snapshot.getId();
             }
         }

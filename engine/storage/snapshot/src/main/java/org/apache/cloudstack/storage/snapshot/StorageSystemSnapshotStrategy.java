@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.snapshot;
 
-import static java.util.Objects.isNull;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -356,7 +356,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         final String fileName) {
         final SnapshotVO snapshotVO = snapshotDao.acquireInLockTable(snapshotInfo.getId());
 
-        if (isNull(snapshotVO)) {
+        if (snapshotVO == null) {
             final String errMsg =
                 "Failed to acquire lock on the following snapshot: " + snapshotInfo.getId();
             s_logger.error(errMsg);
@@ -380,7 +380,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                 }
             }
 
-            if (isNull(fileName)) {
+            if (isBlank(fileName)) {
                 success = snapshotSvr.revertSnapshot(snapshotInfo);
             } else {
                 success = snapshotSvr.revertSnapshot(snapshotInfo, fileName);
