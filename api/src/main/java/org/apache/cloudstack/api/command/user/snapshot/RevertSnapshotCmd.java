@@ -182,7 +182,7 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
 
     private Long getSnapshotId(final Long sfSnapshotId) {
         final Snapshot snapshot = _snapshotService.findArchivedSnapshotFromSfSnapshotID(
-            getId());
+            sfSnapshotId);
         if (snapshot != null) {
             return snapshot.getId();
         }
