@@ -82,11 +82,14 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Snapshot snapshot = _entityMgr.findById(Snapshot.class, getId());
+        Long snapshotId = getId();
+        if ((isS3Backup != null) && isS3Backup) {
+            snapshotId = getSnapshotId(snapshotId);
+        }
+        final Snapshot snapshot = _entityMgr.findById(Snapshot.class, snapshotId);
         if (snapshot != null) {
             return snapshot.getAccountId();
         }
-
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 
@@ -97,7 +100,11 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "revert snapshot: " + this._uuidMgr.getUuid(Snapshot.class, getId());
+        Long snapshotId = getId();
+        if ((isS3Backup != null) && isS3Backup) {
+            snapshotId = getSnapshotId(snapshotId);
+        }
+        return  "revert snapshot: " + this._uuidMgr.getUuid(Snapshot.class, snapshotId);
     }
 
     @Override
@@ -167,13 +174,18 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
     private void setEventDetails(final boolean isS3Backup) {
         Long snapshotId = getId();
         if (isS3Backup) {
-            final Snapshot snapshot = _snapshotService.findArchivedSnapshotFromSfSnapshotID(
-                getId());
-            if (snapshot != null) {
-                snapshotId = snapshot.getId();
-            }
+                snapshotId = getSnapshotId(snapshotId);
         }
         CallContext.current()
             .setEventDetails("Snapshot Id: " + this._uuidMgr.getUuid(Snapshot.class, snapshotId));
+    }
+
+    private Long getSnapshotId(final Long sfSnapshotId) {
+        final Snapshot snapshot = _snapshotService.findArchivedSnapshotFromSfSnapshotID(
+            getId());
+        if (snapshot != null) {
+            return snapshot.getId();
+        }
+        return 0L;
     }
 }
