@@ -61,7 +61,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.snapshot.BackupConfigurationVO;
 import com.cloud.vm.snapshot.dao.BackupConfigurationDao;
 import com.google.common.base.Preconditions;
-import com.solidfire.element.api.CreateSnapshotResult;
 import com.solidfire.element.api.GetAsyncResultResult;
 import com.solidfire.element.api.SolidFireElement;
 import com.solidfire.element.api.StartBulkVolumeWriteResult;
@@ -1435,8 +1434,8 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         final SnapshotVO snapshotVO = snapshotDao.findById(snapshot.getId());
         final long sfSnapshotId = snapshotVO.getSfSnapshotId();
 
-        final CreateSnapshotResult snapshotResult = SolidFireUtil.rollBackVolumeToSnapshot(
-            sfConnection, sfVolumeId, sfSnapshotId);
+//        final CreateSnapshotResult snapshotResult = SolidFireUtil.rollBackVolumeToSnapshot(
+//            sfConnection, sfVolumeId, sfSnapshotId);
 
         final SolidFireUtil.SolidFireVolume sfVolume = SolidFireUtil.getVolume(sfConnection,
             sfVolumeId);
@@ -1445,11 +1444,11 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             sfVolume.getScsiNaaDeviceId());
 
         updateSnapshotDetails(snapshot.getId(), volumeInfo.getId(), sfVolumeId,
-            snapshotResult.getSnapshotID(), volumeVO.getPoolId(), sfVolume.getTotalSize());
+           sfSnapshotId, volumeVO.getPoolId(), sfVolume.getTotalSize());
 
         updateSnapshotDataStore(snapshot.getId(), snapshot.getDataStore().getRole());
 
-        updateSnapshot(snapshotVO.getId(), snapshotResult.getSnapshotID(), true);
+        updateSnapshot(snapshotVO.getId(), sfSnapshotId, true);
 
         return createResult(true, null);
     }
