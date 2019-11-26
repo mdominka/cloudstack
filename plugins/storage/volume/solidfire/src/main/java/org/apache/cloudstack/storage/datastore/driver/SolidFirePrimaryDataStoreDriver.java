@@ -908,7 +908,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     sfNewSnapshotName = StringUtils.left(volumeInfo.getName(), (volumeInfo.getName().length() - trimRequired)) + "-" + snapshotInfo.getUuid();
                 }
 
-                checkMaxSnapshots(sfConnection, sfVolumeId);
+                isMaxSnapshots(sfConnection, sfVolumeId);
 
                 final long sfNewSnapshotId = SolidFireUtil.createSnapshot(sfConnection, sfVolumeId,
                     SolidFireUtil.getSolidFireVolumeName(sfNewSnapshotName), getSnapshotAttributes(snapshotInfo));
@@ -974,7 +974,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         snapshotDao.update(csSnapshotId, snapshot);
     }
 
-    private boolean checkMaxSnapshots(final SolidFireUtil.SolidFireConnection sfConnection , final long volumeId) {
+    private boolean isMaxSnapshots(final SolidFireUtil.SolidFireConnection sfConnection , final long volumeId) {
         final List<com.solidfire.element.api.Snapshot> snapshots = SolidFireUtil.getSnapshotList(sfConnection, volumeId);
 
         final String maxSnapshots = _configDao.getValue(SnapshotManager.MaximumSnapshotsOnSolidfire.key());
@@ -1416,7 +1416,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         final long sfVolumeId = Long.parseLong(volumeInfo.getFolder());
 
-        if (!checkMaxSnapshots(sfConnection, sfVolumeId)) {
+        if (isMaxSnapshots(sfConnection, sfVolumeId)) {
             final String errMsg = "The maximum number of snapshots on the Solidfire has been reached."
                 + "Please delete a snapshot first.";
             return createResult(false, errMsg);
