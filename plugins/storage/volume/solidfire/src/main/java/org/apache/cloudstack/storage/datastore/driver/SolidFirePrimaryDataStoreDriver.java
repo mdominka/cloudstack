@@ -17,7 +17,6 @@
 package org.apache.cloudstack.storage.datastore.driver;
 
 import static java.lang.Integer.parseInt;
-import static org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State.Destroyed;
 import static org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State.Ready;
 import static org.apache.commons.lang.StringUtils.isNotBlank;
 import static org.apache.commons.lang.StringUtils.isNotEmpty;
@@ -1463,8 +1462,8 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     private void updateSnapshotDataStore(final long id, final DataStoreRole role) {
-        final SnapshotDataStoreVO dataStore = snapshotDataStoreDao.findBySnapshot(id, role);
-        if ((dataStore != null) && dataStore.getState().equals(Destroyed)) {
+        final SnapshotDataStoreVO dataStore = snapshotDataStoreDao.findDestroyedBySnapshotIdAndRole(id, role);
+        if (dataStore != null) {
             dataStore.setState(Ready);
             snapshotDataStoreDao.update(id, dataStore);
         }
