@@ -1465,7 +1465,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         final SnapshotDataStoreVO dataStore = snapshotDataStoreDao.findDestroyedBySnapshotIdAndRole(id, role);
         if (dataStore != null) {
             dataStore.setState(Ready);
-            snapshotDataStoreDao.update(id, dataStore);
+            snapshotDataStoreDao.update(dataStore.getId(), dataStore);
         }
     }
 

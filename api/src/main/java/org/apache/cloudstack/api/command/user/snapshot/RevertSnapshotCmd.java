@@ -114,7 +114,11 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public Long getInstanceId() {
-        return getId();
+        Long snapshotId = getId();
+        if ((isS3Backup != null) && isS3Backup) {
+            snapshotId = getSnapshotId(snapshotId);
+        }
+        return snapshotId;
     }
 
     @Override

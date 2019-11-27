@@ -349,7 +349,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
         executeRevertSnapshot(snapshotInfo, volumeInfo, fileName);
 
-        return false;
+        return true;
     }
 
     private void executeRevertSnapshot(final SnapshotInfo snapshotInfo, final VolumeInfo volumeInfo,
