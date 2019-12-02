@@ -18,15 +18,18 @@ package org.apache.cloudstack.storage.datastore.driver;
 
 import static java.lang.Integer.parseInt;
 import static org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State.Ready;
+import static org.apache.commons.collections.CollectionUtils.isNotEmpty;
 import static org.apache.commons.lang.StringUtils.isNotBlank;
 import static org.apache.commons.lang.StringUtils.isNotEmpty;
 import static org.apache.commons.lang3.math.NumberUtils.isParsable;
 
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.S3TO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.Host;
@@ -57,7 +60,9 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.storage.S3.S3Utils;
 import com.cloud.vm.snapshot.BackupConfigurationVO;
+import com.cloud.vm.snapshot.crypto.Aes;
 import com.cloud.vm.snapshot.dao.BackupConfigurationDao;
 import com.google.common.base.Preconditions;
 import com.solidfire.element.api.GetAsyncResultResult;
@@ -99,6 +104,7 @@ import java.util.TimerTask;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -1309,6 +1315,19 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 long sfSnapshotId = Long.parseLong(snapshotDetails.getValue());
 
                 deleteSolidFireSnapshot(sfConnection, csSnapshotId, sfSnapshotId);
+
+                final List<BackupConfigurationVO> config = backupConfigurationDao.listAll();
+
+                // if available delete also the snapshot on S3 backup
+                if (isNotEmpty(config)) {
+                    final S3TO s3TO = buildS3Object(config);
+
+                    final List<S3ObjectSummary> s3Objects = S3Utils.listDirectory(s3TO,
+                        config.get(0).getBucket(), SolidFireUtil.getClusterPrefix(sfConnection));
+
+                    filterS3Objects(s3Objects, sfSnapshotId)
+                        .forEach(i -> S3Utils.deleteObject(s3TO, config.get(0).getBucket(), i.getKey()));
+                }
             }
             else {
                 // A SolidFire volume is being used to support the CloudStack volume snapshot.
@@ -1336,6 +1355,22 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             throw ex;
         }
+    }
+
+    private List<S3ObjectSummary> filterS3Objects(final List<S3ObjectSummary> s3Directory, final Long sfSnapshotId) {
+        return s3Directory.stream().filter(s3 -> s3.getKey().contains(sfSnapshotId.toString()))
+            .collect(Collectors.toList());
+    }
+
+    private S3TO buildS3Object(final List<BackupConfigurationVO> config) {
+        final S3TO s3TO = new S3TO();
+        s3TO.setAccessKey(config.get(0).getAccessKey());
+        s3TO.setSecretKey(Aes.decrypt(config.get(0).getSecretKey()));
+        s3TO.setEndPoint(config.get(0).getEndpoint());
+        s3TO.setBucketName(config.get(0).getBucket());
+        s3TO.setHttps(true);
+        s3TO.setRegion(config.get(0).getRegion());
+        return s3TO;
     }
 
     private void deleteTemplate(TemplateInfo template, long storagePoolId) {
