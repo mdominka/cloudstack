@@ -120,9 +120,9 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final long MAX_IOPS_FOR_MIGRATING_VOLUME = 20000L;
     private static final long MIN_IOPS_FOR_SNAPSHOT_VOLUME = 100L;
     private static final long MAX_IOPS_FOR_SNAPSHOT_VOLUME = 20000L;
-    private static final long INITIAL_DELAY = 1L;
+    private static final long INITIAL_DELAY = 2L;
     private static final long DELAY = 1L;
-    private static final long TIMEOUT = 5L;
+    private static final long TIMEOUT = 6L;
 
     private static final String BASIC_SF_ID = "basicSfId";
 
@@ -1321,18 +1321,17 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 deleteSolidFireSnapshot(sfConnection, csSnapshotId, sfSnapshotId);
 
                 final List<BackupConfigurationVO> config = backupConfigurationDao.listAll();
-                final SnapshotPolicyVO snapshotPolicyVO = snapshotPolicyDao.findOneByVolume(snapshotInfo.getVolumeId());
+                final SnapshotPolicyVO snapshotPolicy = snapshotPolicyDao.findOneByVolume(snapshotInfo.getVolumeId());
 
                 // if available delete also the snapshot on S3 backup
-                if (isNotEmpty(config) && (snapshotPolicyVO != null)
-                    && snapshotPolicyVO.isS3backup()) {
+                if (isNotEmpty(config) && (snapshotPolicy != null) && snapshotPolicy.isS3backup()) {
                     final S3TO s3TO = buildS3Object(config);
 
                     final List<S3ObjectSummary> s3Objects = S3Utils.listDirectory(s3TO,
                         config.get(0).getBucket(), SolidFireUtil.getClusterPrefix(sfConnection));
 
                     filterS3Objects(s3Objects, sfSnapshotId)
-                        .forEach(i -> S3Utils.deleteObject(s3TO, config.get(0).getBucket(), i.getKey()));
+                        .forEach(s3Object -> S3Utils.deleteObject(s3TO, config.get(0).getBucket(), s3Object.getKey()));
                 }
             }
             else {
