@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.util;
 
+import static java.lang.String.format;
 import static org.apache.commons.lang.ArrayUtils.toPrimitive;
 import static org.apache.commons.lang.StringUtils.isNotBlank;
 
@@ -159,6 +160,9 @@ public class SolidFireUtil {
 
     private static final String S3_ENDPOINT = "s3";
     private static final String S3_FORMAT = "native";
+    private static final String S3_SCRIPT = "bv_internal.py";
+    private static final int S3_BLOCK_SIZE = 262144;
+    private static final int S3_LBA_SIZE = 0;
 
 
     public static class SolidFireConnection {
@@ -1018,8 +1022,8 @@ public class SolidFireUtil {
         final Boolean hasWriteParameters) {
 
         final Map<String, Integer> rangeParameters = new HashMap<>();
-        rangeParameters.put("lba", 0);
-        rangeParameters.put("blocks", 262144);
+        rangeParameters.put("lba", S3_LBA_SIZE);
+        rangeParameters.put("blocks", S3_BLOCK_SIZE);
 
         final StringBuilder prefix = new StringBuilder();
         prefix.append(clusterPrefix).append(volumeName).append('-').append(volumeId);
@@ -1035,6 +1039,14 @@ public class SolidFireUtil {
         scriptParameters.put("range", rangeParameters);
         scriptParameters.put(hasWriteParameters ? "write" : "read", parameters);
 
+        if (isNotBlank(fileName)) {
+            LOGGER.info(format("with \"write\" parameters: prefix: %1$s, endpoint: %2$s," +
+                    " format: %3$s ",
+                prefix, S3_ENDPOINT, S3_FORMAT));
+            LOGGER.info(format("with \"range\" parameters: lba: %1$d, blocks: %2$d ", S3_LBA_SIZE,
+                S3_BLOCK_SIZE));
+        }
+
         return scriptParameters;
     }
 
@@ -1043,7 +1055,7 @@ public class SolidFireUtil {
 
         final SolidFireElement sfe = getSolidFireElement(sfConnection);
 
-        final Map<String, String> parameters = buildS3Parameters(s3Config);
+        final Map<String, String> parameters = buildS3Parameters(s3Config, false);
         final Map<String, Object> scriptParameters = buildScriptParameters(getClusterPrefix(sfConnection),
             volumeId, volumeName, parameters, null, true);
 
@@ -1051,7 +1063,7 @@ public class SolidFireUtil {
             .format(S3_FORMAT)
             .volumeID(volumeId)
             .optionalSnapshotID(snapShotId)
-            .optionalScript("bv_internal.py")
+            .optionalScript(S3_SCRIPT)
             .optionalScriptParameters(scriptParameters)
             .build();
 
@@ -1062,16 +1074,21 @@ public class SolidFireUtil {
         final SolidFireConnection sfConnection, final long volumeId, final String volumeName,
         final BackupConfigurationVO s3Config, final String fileName) {
 
-        final Map<String, String> parameters = buildS3Parameters(s3Config);
+        LOGGER.info(format("<<< Start Solidfire BulkVolumeWrite >>> for Volume: ID: %1$d, Name: %2$s",
+            volumeId, volumeName));
+
+        final Map<String, String> parameters = buildS3Parameters(s3Config, true);
         final Map<String, Object> scriptParameters = buildScriptParameters(getClusterPrefix(sfConnection),
             volumeId, volumeName, parameters, fileName, false);
 
         final StartBulkVolumeWriteRequest request = StartBulkVolumeWriteRequest.builder()
             .format(S3_FORMAT)
             .volumeID(volumeId)
-            .optionalScript("bv_internal.py")
+            .optionalScript(S3_SCRIPT)
             .optionalScriptParameters(scriptParameters)
             .build();
+
+        LOGGER.info(format("with \"script\" parameter: %1$s", S3_SCRIPT));
 
         return getSolidFireElement(sfConnection).startBulkVolumeWrite(request);
     }
@@ -1103,12 +1120,20 @@ public class SolidFireUtil {
         return Arrays.asList(snapshotsResult.getSnapshots());
     }
 
-    private static Map<String, String> buildS3Parameters(final BackupConfigurationVO s3config) {
+    private static Map<String, String> buildS3Parameters(final BackupConfigurationVO s3config,
+        final boolean isWriteRequest) {
         final Map<String, String> s3Parameters = new HashMap<>();
         s3Parameters.put("hostname", s3config.getEndpoint());
         s3Parameters.put("awsAccessKeyID", s3config.getAccessKey());
         s3Parameters.put("awsSecretAccessKey", Aes.decrypt(s3config.getSecretKey()));
         s3Parameters.put("bucket", s3config.getBucket());
+
+        if (isWriteRequest) {
+            LOGGER.info(format("with credentials: hostname: %1$s, awsAccessKeyID: %2$s, " +
+                    "awsSecretAccessKey: ***** and bucket: %3$s", s3config.getEndpoint(),
+                s3config.getAccessKey(), s3config.getBucket()));
+        }
+
         return s3Parameters;
     }
 
