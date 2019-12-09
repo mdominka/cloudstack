@@ -3417,6 +3417,9 @@
                             cpuused: {
                                 label: 'label.cpu.utilized'
                             },
+                            memorykbs: {
+                                label: 'label.memory.used'
+                            },
                             networkkbsread: {
                                 label: 'label.network.read'
                             },
@@ -3447,6 +3450,7 @@
                                         data: {
                                             totalCPU: jsonObj.cpunumber + " x " + cloudStack.converters.convertHz(jsonObj.cpuspeed),
                                             cpuused: jsonObj.cpuused,
+                                            memorykbs: jsonObj.memorykbs + " of "+ cloudStack.converters.convertBytes(jsonObj.memory * 1024.0 * 1024.0),
                                             networkkbsread: (jsonObj.networkkbsread == null) ? "N/A" : cloudStack.converters.convertBytes(jsonObj.networkkbsread * 1024),
                                             networkkbswrite: (jsonObj.networkkbswrite == null) ? "N/A" : cloudStack.converters.convertBytes(jsonObj.networkkbswrite * 1024),
                                             diskkbsread: (jsonObj.diskkbsread == null) ? "N/A" : ((jsonObj.hypervisor == "KVM") ? cloudStack.converters.convertBytes(jsonObj.diskkbsread * 1024) : ((jsonObj.hypervisor == "XenServer") ? cloudStack.converters.convertBytes(jsonObj.diskkbsread * 1024) + "/s" : "N/A")),
@@ -3742,9 +3746,6 @@ if (virtualMachine && virtualMachine.state == "Stopped") {
             allowedActions.push("resetSSHKeyForVirtualMachine");
         } else if (jsonObj.state == 'Starting') {
             //  allowedActions.push("stop");
-            if (isAdmin()) {
-                allowedActions.push("viewConsole");
-            }
         } else if (jsonObj.state == 'Error') {
             allowedActions.push("destroy");
         } else if (jsonObj.state == 'Expunging') {
@@ -3752,6 +3753,11 @@ if (virtualMachine && virtualMachine.state == "Stopped") {
                 allowedActions.push("expunge");
             }
         }
+
+        if (jsonObj.state == 'Starting' || jsonObj.state == 'Stopping' || jsonObj.state == 'Migrating') {
+            allowedActions.push("viewConsole");
+        }
+
         return allowedActions;
     }
 

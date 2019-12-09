@@ -1975,7 +1975,7 @@
                     detailView: {
                         name: 'Snapshot detail',
                         actions: {
-                            createTemplate: cloudStack.createTemplateMethod(true),
+                            createTemplate: cloudStack.createTemplateFromSnapshotMethod(),
 
                             createVolume: {
                                 label: 'label.action.create.volume',
