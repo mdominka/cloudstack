@@ -17,6 +17,7 @@
 
 package com.cloud.vm.backup;
 
+import static java.util.Collections.emptyList;
 import static org.apache.commons.collections.CollectionUtils.isEmpty;
 import static org.apache.commons.collections.CollectionUtils.isNotEmpty;
 
@@ -44,6 +45,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
   private static final String CLUSTER_PREFIX_DEFAULT = "hci-cl01-nhjj/";
   private static final String S3_MANIFEST_RECORD = "manifest";
   private static final String CLUSTER_PREFIX = "clusterPrefix";
+  private static final Character SEPARATOR = '/';
 
   @Inject
   private BackupConfigurationDao backupConfigurationDao;
@@ -55,16 +57,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
     final List<BackupConfigurationVO> config = backupConfigurationDao.listAll();
 
     if (isEmpty(config)) {
-      return new ArrayList<>();
+      return emptyList();
     }
 
-    final S3TO s3TO = new S3TO();
-    s3TO.setSecretKey(Aes.decrypt(config.get(0).getSecretKey()));
-    s3TO.setAccessKey(config.get(0).getAccessKey());
-    s3TO.setEndPoint(config.get(0).getEndpoint());
-    s3TO.setBucketName(config.get(0).getBucket());
-    s3TO.setHttps(true);
-    s3TO.setRegion(config.get(0).getRegion());
+    final S3TO s3TO = buildS3Object(config);
 
     final List<StoragePoolDetailVO> storagePoolDetails =
         storagePoolDetailsDao.findDetails(CLUSTER_PREFIX, null, null);
@@ -73,7 +69,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
       final List<S3ObjectSummary> s3ObjectSummaries = new ArrayList<>();
       storagePoolDetails.stream().map(StoragePoolDetailVO::getValue)
           .forEach(value -> s3ObjectSummaries.addAll(doFilterS3Objects(S3Utils.listDirectory(s3TO,
-              config.get(0).getBucket(), value + '/'))));
+              config.get(0).getBucket(), value + SEPARATOR))));
 
       return s3ObjectSummaries;
     }
@@ -84,5 +80,17 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
     return listDirectory.stream()
         .filter(s -> s.getKey().toLowerCase().contains(S3_MANIFEST_RECORD))
         .collect(Collectors.toList());
+  }
+
+  private S3TO buildS3Object(final List<BackupConfigurationVO> config) {
+    final S3TO s3TO = new S3TO();
+    s3TO.setSecretKey(Aes.decrypt(config.get(0).getSecretKey()));
+    s3TO.setAccessKey(config.get(0).getAccessKey());
+    s3TO.setEndPoint(config.get(0).getEndpoint());
+    s3TO.setBucketName(config.get(0).getBucket());
+    s3TO.setHttps(true);
+    s3TO.setRegion(config.get(0).getRegion());
+
+    return s3TO;
   }
 }
