@@ -35,7 +35,11 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.springframework.stereotype.Component;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -48,6 +52,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
   private static final String S3_MANIFEST_RECORD = "manifest";
   private static final String CLUSTER_PREFIX = "clusterPrefix";
   private static final Character SEPARATOR = '/';
+  private static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
 
   @Inject
   private BackupConfigurationDao backupConfigurationDao;
@@ -87,8 +92,15 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
         .filter(s -> s.getKey().toLowerCase().contains(S3_MANIFEST_RECORD))
         .collect(Collectors.toList());
 
-    return summaries.stream().filter(s3 -> searchCmds.stream().allMatch(s3.getKey().toLowerCase()::contains))
-        .collect(Collectors.toList());
+    return summaries.stream().filter(s3 -> searchCmds.stream().allMatch((s3.getKey().toLowerCase() +
+        convertDateToString(s3.getLastModified()))::contains)).collect(Collectors.toList());
+  }
+
+  private  String convertDateToString(final Date backupDate) {
+    final LocalDateTime dateTime = new Timestamp(backupDate.getTime()).toLocalDateTime();
+    final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN);
+
+    return dateTime.format(formatter);
   }
 
   private List<String> buildSearchCmdList(final ListBackupCmd cmd) {
