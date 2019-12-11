@@ -166,6 +166,7 @@ import com.cloud.user.SSHKeyPair;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.crypt.DBEncryptionUtil;
@@ -654,31 +655,28 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public BackupResponse createBackupResponse(final S3ObjectSummary backup) {
-      final String volumeInfo = backup.getKey().split("/")[1];
+        final String volumeInfo = backup.getKey().split("/")[1];
         final String fileName = backup.getKey().split("/")[2];
 
-      final BackupResponse backupResponse = new BackupResponse();
+        final BackupResponse backupResponse = new BackupResponse();
         backupResponse.setName(fileName);
 
-      long snapshotId = 0L;
-      try {
-        snapshotId = parseLong(fileName.substring(fileName.lastIndexOf('-') + 1));
-      } catch (final NumberFormatException ignore) {
-      }
-      backupResponse.setSnapshotId(snapshotId);
+        final long snapshotId = NumbersUtil.parseLong(fileName.substring(
+          fileName.lastIndexOf('-') + 1), 0);
+        backupResponse.setSnapshotId(snapshotId);
 
-      final LocalDateTime dateTime = new Timestamp(
+        final LocalDateTime dateTime = new Timestamp(
           backup.getLastModified().getTime()).toLocalDateTime();
-      final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-      backupResponse.setCreationDate(dateTime.format(formatter));
+        backupResponse.setCreationDate(dateTime.format(formatter));
         backupResponse.setState("BackedUp");
 
-      final int lastIndex = volumeInfo.lastIndexOf('-');
-      backupResponse.setVolumeName(volumeInfo.substring(0, lastIndex));
-      backupResponse.setVolumeId(parseLong(volumeInfo.substring(lastIndex + 1)));
-      backupResponse.setObjectName("backup");
-      return backupResponse;
+        final int lastIndex = volumeInfo.lastIndexOf('-');
+        backupResponse.setVolumeName(volumeInfo.substring(0, lastIndex));
+        backupResponse.setVolumeId(parseLong(volumeInfo.substring(lastIndex + 1)));
+        backupResponse.setObjectName("backup");
+        return backupResponse;
     }
 
     @Override

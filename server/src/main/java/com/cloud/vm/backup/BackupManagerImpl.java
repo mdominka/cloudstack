@@ -17,9 +17,11 @@
 
 package com.cloud.vm.backup;
 
+import static java.lang.String.valueOf;
 import static java.util.Collections.emptyList;
 import static org.apache.commons.collections.CollectionUtils.isEmpty;
 import static org.apache.commons.collections.CollectionUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.agent.api.to.S3TO;
@@ -69,17 +71,48 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
       final List<S3ObjectSummary> s3ObjectSummaries = new ArrayList<>();
       storagePoolDetails.stream().map(StoragePoolDetailVO::getValue)
           .forEach(value -> s3ObjectSummaries.addAll(doFilterS3Objects(S3Utils.listDirectory(s3TO,
-              config.get(0).getBucket(), value + SEPARATOR))));
+              config.get(0).getBucket(), value + SEPARATOR), cmd)));
 
       return s3ObjectSummaries;
     }
-    return doFilterS3Objects(S3Utils.listDirectory(s3TO, config.get(0).getBucket(), CLUSTER_PREFIX_DEFAULT));
+    return doFilterS3Objects(S3Utils.listDirectory(s3TO, config.get(0).getBucket(),
+        CLUSTER_PREFIX_DEFAULT), cmd);
   }
 
-  private List<S3ObjectSummary> doFilterS3Objects(final List<S3ObjectSummary> listDirectory) {
-    return listDirectory.stream()
+  private List<S3ObjectSummary> doFilterS3Objects(final List<S3ObjectSummary> listDirectory,
+      final ListBackupCmd cmd) {
+    final List<String> searchCmds = buildSearchCmdList(cmd);
+
+    final List<S3ObjectSummary> summaries = listDirectory.stream()
         .filter(s -> s.getKey().toLowerCase().contains(S3_MANIFEST_RECORD))
         .collect(Collectors.toList());
+
+    return summaries.stream().filter(s3 -> searchCmds.stream().allMatch(s3.getKey().toLowerCase()::contains))
+        .collect(Collectors.toList());
+  }
+
+  private List<String> buildSearchCmdList(final ListBackupCmd cmd) {
+    final List<String> cmdList = new ArrayList<>();
+
+    if (isNotBlank(cmd.getKeyword())) {
+      cmdList.add(cmd.getKeyword().toLowerCase());
+    }
+    if (cmd.getSnapshotId() != null) {
+      cmdList.add(valueOf(cmd.getSnapshotId()));
+    }
+    if (cmd.getVolumeId() != null) {
+      cmdList.add(valueOf(cmd.getVolumeId()));
+    }
+    if (isNotBlank(cmd.getCreationDate())) {
+      cmdList.add(cmd.getCreationDate());
+    }
+    if (isNotBlank(cmd.getVolumeName())) {
+      cmdList.add(cmd.getVolumeName().toLowerCase());
+    }
+    if (isNotBlank(cmd.getSnapshotName())) {
+      cmdList.add(cmd.getSnapshotName().toLowerCase());
+    }
+    return cmdList;
   }
 
   private S3TO buildS3Object(final List<BackupConfigurationVO> config) {
