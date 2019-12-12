@@ -59,6 +59,9 @@ public interface SnapshotManager extends Configurable {
     public static final ConfigKey<Boolean> BackupSnapshotAfterTakingSnapshot = new ConfigKey<Boolean>(Boolean.class, "snapshot.backup.to.secondary",  "Snapshots", "true",
             "Indicates whether to always backup primary storage snapshot to secondary storage", false, ConfigKey.Scope.Global, null);
 
+    ConfigKey<Integer> MaximumSnapshotsOnSolidfire = new ConfigKey<>(Integer.class, "max.snapshots.on.solidfire",  "Snapshots", "32",
+            "The maximum number of snapshots on the Solidfire", true, ConfigKey.Scope.Global, null);
+
     void deletePoliciesForVolume(Long volumeId);
 
     /**
