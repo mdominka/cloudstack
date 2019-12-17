@@ -33,8 +33,6 @@ public interface SnapshotDao extends GenericDao<SnapshotVO, Long>, StateDao<Snap
 
     long getLastSnapshot(long volumeId, DataStoreRole role);
 
-    Long getOldestSnapshotIdByVolumeIdAndRole(final long volumeId, final DataStoreRole role);
-
     List<SnapshotVO> listByVolumeIdTypeNotDestroyed(long volumeId, Type type);
 
     List<SnapshotVO> listByVolumeIdIncludingRemoved(long volumeId);

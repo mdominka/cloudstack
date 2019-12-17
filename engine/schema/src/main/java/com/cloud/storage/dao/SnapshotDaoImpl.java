@@ -16,9 +16,6 @@
 // under the License.
 package com.cloud.storage.dao;
 
-import static org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State.Ready;
-import static org.apache.commons.collections.CollectionUtils.isNotEmpty;
-
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
@@ -41,14 +38,11 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.Comparator;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
@@ -69,8 +63,6 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private SearchBuilder<SnapshotVO> InstanceIdSearch;
     private SearchBuilder<SnapshotVO> StatusSearch;
     private SearchBuilder<SnapshotVO> notInStatusSearch;
-    private SearchBuilder<SnapshotVO> OldestSnapshotSearch;
-
     private GenericSearchBuilder<SnapshotVO, Long> CountSnapshotsByAccount;
     @Inject
     ResourceTagDao _tagsDao;
@@ -78,8 +70,6 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     protected VMInstanceDao _instanceDao;
     @Inject
     protected VolumeDao _volumeDao;
-    @Inject
-    private SnapshotDataStoreDao snapshotDataStoreDao;
 
     @Override
     public List<SnapshotVO> listByVolumeIdTypeNotDestroyed(long volumeId, Type type) {
@@ -186,18 +176,6 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
 
         InstanceIdSearch.join("instanceSnapshots", volumeSearch, volumeSearch.entity().getId(), InstanceIdSearch.entity().getVolumeId(), JoinType.INNER);
         InstanceIdSearch.done();
-
-        OldestSnapshotSearch = createSearchBuilder();
-        OldestSnapshotSearch.and("volumeId", OldestSnapshotSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        OldestSnapshotSearch.and("status", OldestSnapshotSearch.entity().getState(), SearchCriteria.Op.EQ);
-
-        final SearchBuilder<SnapshotDataStoreVO> snapshotStoreRef = snapshotDataStoreDao.createSearchBuilder();
-        snapshotStoreRef.and("storeRole", snapshotStoreRef.entity().getRole(), SearchCriteria.Op.EQ);
-        snapshotStoreRef.and("state", snapshotStoreRef.entity().getState(), SearchCriteria.Op.EQ);
-
-        OldestSnapshotSearch.join("snapshotsDataStore", snapshotStoreRef, snapshotStoreRef.entity().getSnapshotId(),
-            OldestSnapshotSearch.entity().getId(), JoinType.INNER);
-        OldestSnapshotSearch.done();
     }
 
     @Override
@@ -296,21 +274,5 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         sc.setParameters("volumeId", volumeId);
         sc.setParameters("status", (Object[]) status);
         return listBy(sc, null);
-    }
-
-    @Override
-    public Long getOldestSnapshotIdByVolumeIdAndRole(final long volumeId, final DataStoreRole role) {
-        final SearchCriteria<SnapshotVO> sc = OldestSnapshotSearch.create();
-        sc.setParameters("volumeId", volumeId);
-        sc.setParameters("status", State.BackedUp);
-        sc.setJoinParameters("snapshotsDataStore", "storeRole", role);
-        sc.setJoinParameters("snapshotsDataStore", "state", Ready);
-
-        final List<SnapshotVO> snapshots = listBy(sc, null);
-        if (isNotEmpty(snapshots)) {
-            snapshots.sort(Comparator.comparing(SnapshotVO::getCreated));
-            return snapshots.get(0).getId();
-        }
-        return 0L;
     }
 }

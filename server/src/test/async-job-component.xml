@@ -43,7 +43,6 @@
     <dao name="vlan" class="com.cloud.dc.dao.VlanDaoImpl">
     </dao>
     <dao name="Volume" class="com.cloud.storage.dao.VolumeDaoImpl" />
-    <dao name="SnapshotDataStore" class="org.apache.cloudstack.storage.image.db.SnapshotDataStoreDaoImpl" />
     <dao name="Events" class="com.cloud.event.dao.EventDaoImpl" />
     <dao name="VM Template" class="com.cloud.storage.dao.VMTemplateDaoImpl">
       <param name="cache.size">50</param>

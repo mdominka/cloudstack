@@ -1285,11 +1285,14 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     private void deleteOldestSnapshot(final DataStoreRole role, final long volumeId,
         final long storagePoolId) {
-        final long oldestSnapshotId = snapshotDao.getOldestSnapshotIdByVolumeIdAndRole(volumeId,
-            role);
+        final SnapshotDataStoreVO oldestSnapshot =
+            snapshotDataStoreDao.findOldestSnapshotForVolume(volumeId, role);
 
-        final SnapshotDetailsVO snapshotDetails = snapshotDetailsDao.findDetail(oldestSnapshotId,
-            SolidFireUtil.SNAPSHOT_ID);
+        if (oldestSnapshot == null) {
+            return;
+        }
+        final SnapshotDetailsVO snapshotDetails =
+            snapshotDetailsDao.findDetail(oldestSnapshot.getSnapshotId(), SolidFireUtil.SNAPSHOT_ID);
 
         if (snapshotDetails == null) {
             return;
@@ -1299,15 +1302,15 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         final SolidFireUtil.SolidFireConnection sfConnection =
             SolidFireUtil.getSolidFireConnection(storagePoolId, storagePoolDetailsDao);
 
-        deleteSolidFireSnapshot(sfConnection, oldestSnapshotId, sfSnapshotId);
+        deleteSolidFireSnapshot(sfConnection, oldestSnapshot.getSnapshotId(), sfSnapshotId);
 
-        snapshotDetailsDao.removeDetails(oldestSnapshotId);
+        snapshotDetailsDao.removeDetails(oldestSnapshot.getSnapshotId());
         updateStoragePoolUsedBytes(storagePoolId);
 
         LOGGER.info(format("The maximum number of snapshots (%1$s: %2$d) on the Solidfire for the "
                 + "volume (ID: %3$d) has been reached and therefore the oldest snapshot (ID: %4$d) "
                 + "has been deleted.", MaximumSnapshotsOnSolidfire.key(),
-            MaximumSnapshotsOnSolidfire.value(), volumeId, oldestSnapshotId));
+            MaximumSnapshotsOnSolidfire.value(), volumeId, oldestSnapshot.getSnapshotId()));
     }
 
     private void updateStoragePoolUsedBytes(final long storagePoolId) {
