@@ -16,13 +16,8 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.driver;
 
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
+import static com.cloud.storage.snapshot.SnapshotManager.MaximumSnapshotsOnSolidfire;
+import static java.lang.String.format;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -39,12 +34,12 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ResizeVolumePayload;
 import com.cloud.storage.Snapshot.State;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
@@ -57,9 +52,8 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
-
 import com.google.common.base.Preconditions;
-
+import com.solidfire.element.api.Snapshot;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -67,12 +61,12 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
@@ -86,6 +80,14 @@ import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
 
 public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final Logger LOGGER = Logger.getLogger(SolidFirePrimaryDataStoreDriver.class);
@@ -882,6 +884,11 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     sfNewSnapshotName = StringUtils.left(volumeInfo.getName(), (volumeInfo.getName().length() - trimRequired)) + "-" + snapshotInfo.getUuid();
                 }
 
+                // if the maximum number of snapshots on the Solidfire has been reached, then delete the oldest snapshot first.
+                if (isMaxSnapshots(sfConnection, sfVolumeId)) {
+                    deleteOldestSnapshot(snapshotInfo.getDataStore().getRole(), volumeVO.getId(), storagePoolId);
+                }
+
                 long sfNewSnapshotId = SolidFireUtil.createSnapshot(sfConnection, sfVolumeId, SolidFireUtil.getSolidFireVolumeName(sfNewSnapshotName),
                         getSnapshotAttributes(snapshotInfo));
 
@@ -1267,21 +1274,52 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
 
             snapshotDetailsDao.removeDetails(csSnapshotId);
-
-            StoragePoolVO storagePool = storagePoolDao.findById(storagePoolId);
-
-            // getUsedBytes(StoragePool) will not include the snapshot to delete because it has already been deleted by this point
-            long usedBytes = getUsedBytes(storagePool);
-
-            storagePool.setUsedBytes(usedBytes < 0 ? 0 : usedBytes);
-
-            storagePoolDao.update(storagePoolId, storagePool);
+            updateStoragePoolUsedBytes(storagePoolId);
         }
         catch (Exception ex) {
             LOGGER.debug(SolidFireUtil.LOG_PREFIX + "Issue in 'deleteSnapshot(SnapshotInfo, long)'. CloudStack snapshot ID: " + csSnapshotId, ex);
 
             throw ex;
         }
+    }
+
+    private void deleteOldestSnapshot(final DataStoreRole role, final long volumeId,
+        final long storagePoolId) {
+        final long oldestSnapshotId = snapshotDao.getOldestSnapshotIdByVolumeIdAndRole(volumeId,
+            role);
+
+        final SnapshotDetailsVO snapshotDetails = snapshotDetailsDao.findDetail(oldestSnapshotId,
+            SolidFireUtil.SNAPSHOT_ID);
+
+        if (snapshotDetails == null) {
+            return;
+        }
+        final long sfSnapshotId = Long.parseLong(snapshotDetails.getValue());
+
+        final SolidFireUtil.SolidFireConnection sfConnection =
+            SolidFireUtil.getSolidFireConnection(storagePoolId, storagePoolDetailsDao);
+
+        deleteSolidFireSnapshot(sfConnection, oldestSnapshotId, sfSnapshotId);
+
+        snapshotDetailsDao.removeDetails(oldestSnapshotId);
+        updateStoragePoolUsedBytes(storagePoolId);
+
+        LOGGER.info(format("The maximum number of snapshots (%1$s: %2$d) on the Solidfire for the "
+                + "volume (ID: %3$d) has been reached and therefore the oldest snapshot (ID: %4$d) "
+                + "has been deleted.", MaximumSnapshotsOnSolidfire.key(),
+            MaximumSnapshotsOnSolidfire.value(), volumeId, oldestSnapshotId));
+    }
+
+    private void updateStoragePoolUsedBytes(final long storagePoolId) {
+        final StoragePoolVO storagePool = storagePoolDao.findById(storagePoolId);
+
+        // getUsedBytes(StoragePool) will not include the snapshot to delete because it has been
+        // already deleted by this point
+        final long usedBytes = getUsedBytes(storagePool);
+
+        storagePool.setUsedBytes((usedBytes < 0) ? 0 : usedBytes);
+
+        storagePoolDao.update(storagePoolId, storagePool);
     }
 
     private void deleteTemplate(TemplateInfo template, long storagePoolId) {
@@ -1586,5 +1624,12 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         return lstSnapshots2;
+    }
+
+    private boolean isMaxSnapshots(final SolidFireUtil.SolidFireConnection sfConnection,
+        final long sfVolumeId) {
+        final List<Snapshot> snapshots = SolidFireUtil.getSnapshotList(sfConnection, sfVolumeId);
+
+        return snapshots.size() >= MaximumSnapshotsOnSolidfire.value();
     }
 }

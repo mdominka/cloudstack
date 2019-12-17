@@ -16,24 +16,8 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.util;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.UUID;
-
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import static java.util.Collections.emptyList;
+import static org.apache.commons.lang.ArrayUtils.toPrimitive;
 
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -44,10 +28,8 @@ import com.cloud.user.AccountDetailVO;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
-
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Longs;
-
 import com.solidfire.client.ElementFactory;
 import com.solidfire.element.api.Account;
 import com.solidfire.element.api.AddAccountRequest;
@@ -64,6 +46,7 @@ import com.solidfire.element.api.GetAccountByIDRequest;
 import com.solidfire.element.api.GetAccountByNameRequest;
 import com.solidfire.element.api.GetAsyncResultRequest;
 import com.solidfire.element.api.ListSnapshotsRequest;
+import com.solidfire.element.api.ListSnapshotsResult;
 import com.solidfire.element.api.ListVolumeAccessGroupsRequest;
 import com.solidfire.element.api.ListVolumesRequest;
 import com.solidfire.element.api.ModifyVolumeRequest;
@@ -76,8 +59,24 @@ import com.solidfire.element.api.SolidFireElement;
 import com.solidfire.element.api.Volume;
 import com.solidfire.element.api.VolumeAccessGroup;
 import com.solidfire.jsvcgen.javautil.Optional;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.log4j.Logger;
 
-import static org.apache.commons.lang.ArrayUtils.toPrimitive;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.UUID;
 
 public class SolidFireUtil {
     private static final Logger LOGGER = Logger.getLogger(SolidFireUtil.class);
@@ -1359,5 +1358,20 @@ public class SolidFireUtil {
         }
 
         return new HashMap<>(map);
+    }
+
+    public static List<Snapshot> getSnapshotList(final SolidFireUtil.SolidFireConnection connection,
+        final long volumeId) {
+        final ListSnapshotsRequest snapshotsRequest = ListSnapshotsRequest.builder()
+            .optionalVolumeID(volumeId)
+            .build();
+
+        final ListSnapshotsResult snapshotsResult = getSolidFireElement(connection)
+            .listSnapshots(snapshotsRequest);
+
+        if ((snapshotsResult == null) || (snapshotsResult.getSnapshots() == null)) {
+            return emptyList();
+        }
+        return Arrays.asList(snapshotsResult.getSnapshots());
     }
 }
