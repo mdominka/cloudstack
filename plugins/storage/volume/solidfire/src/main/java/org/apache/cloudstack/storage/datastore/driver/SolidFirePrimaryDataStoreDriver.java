@@ -60,6 +60,7 @@ import com.cloud.user.AccountDetailVO;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.S3.S3Utils;
@@ -986,7 +987,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private boolean isMaxSnapshots(final SolidFireUtil.SolidFireConnection sfConnection , final long volumeId) {
         final List<com.solidfire.element.api.Snapshot> snapshots = SolidFireUtil.getSnapshotList(sfConnection, volumeId);
 
-        final String maxSnapshots = _configDao.getValue(SnapshotManager.MaximumSnapshotsOnSolidfire.key());
+        final String maxSnapshots = _configDao.getValue(SnapshotManager.SolidfireMaximumSnapshots.key());
 
         return isParsable(maxSnapshots) && (snapshots.size() >= parseInt(maxSnapshots));
     }
@@ -1538,7 +1539,9 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         try {
             // min. execution time before force shutdown
-            executorService.awaitTermination(TIMEOUT, TimeUnit.MINUTES);
+            final String timeout = _configDao.getValue(SnapshotManager.SolidfireS3RevertTimeout.key());
+            executorService.awaitTermination(NumbersUtil.parseInt(timeout, 15),
+                TimeUnit.MINUTES);
             if (!executorService.isShutdown()) {
                 executorService.shutdown();
             }
