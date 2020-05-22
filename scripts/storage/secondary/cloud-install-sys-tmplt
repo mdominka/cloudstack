@@ -19,7 +19,7 @@
 
 
 usage() {
-  printf "\nUsage: %s:\n\t-m secondary storage mount point\n\t-f system vm template file\n\t-h hypervisor name: kvm|vmware|xenserver|hyperv|ovm3\n\t-s mgmt server secret key, if you specified any when running cloudstack-setup-database, default is password\n\t-u Url to system vm template\n\t-F clean up system templates of specified hypervisor\n\t-e Template suffix, e.g vhd, ova, qcow2\n\t-o Database server hostname or ip, e.g localhost\n\t-r Database user name, e.g root\n\t-p mysql database port\n\t-d Database password. Followed by nothing if the password is empty\n\t-H with hvm\n\n" $(basename $0) >&2
+  printf "\nUsage: %s:\n\t-m secondary storage mount point\n\t-f system vm template file\n\t-h hypervisor name: kvm|vmware|xenserver|hyperv|ovm3\n\t-s mgmt server secret key, if you specified any when running cloudstack-setup-database, default is password\n\t-u Url to system vm template\n\t-F clean up system templates of specified hypervisor\n\t-e Template suffix, e.g vhd, ova, qcow2\n\t-o Database server hostname or ip, e.g localhost\n\t-r Database user name, e.g root\n\t-p mysql database port\n\t-d Database password. Followed by nothing if the password is empty\n\n" $(basename $0) >&2
   printf "\tor\n"
   printf "\nUsage: %s:\n\t-m secondary storage mount point\n\t-u http url for system vm template\n\t-h hypervisor name: kvm|vmware|xenserver|hyperv|ovm3\n\t-s mgmt server secret key\n\n" $(basename $0) >&2
 }
@@ -28,7 +28,7 @@ usage() {
 failed() {
   local returnval=$1
   local returnmsg=$2
-  
+
   # check for an message, if there is no one dont print anything
   if [[ -z $returnmsg ]]; then
     :
@@ -56,8 +56,7 @@ dbHost="localhost"
 dbUser="root"
 dbPassword=
 dbPort=3306
-jasypt='/usr/share/cloudstack-common/lib/jasypt-1.9.2.jar'
-tmpldescr='SystemVM Template'
+jasypt='/usr/share/cloudstack-common/lib/jasypt-1.9.3.jar'
 
 # check if first parameter is not a dash (-) then print the usage block
 if [[ ! $@ =~ ^\-.+ ]]; then
@@ -66,7 +65,7 @@ if [[ ! $@ =~ ^\-.+ ]]; then
 fi
 
 OPTERR=0
-while getopts 'm:h:f:u:Ft:e:s:o:r:d:p:'# OPTION
+while getopts 'm:h:f:u:Ft:e:Ms:o:r:d:p:'# OPTION
 do
   case $OPTION in
   m)    mflag=1
@@ -170,11 +169,7 @@ if [[ "$templateId" == "" ]]; then
   if [[ "$hyper" == "kvm" ]]; then
     ext="qcow2"
     templateId=(`mysql -P $dbPort -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"KVM\" and removed is null"`)
-    if [[ $(which qemu-img) ]]; then
-      qemuimgcmd=$(which qemu-img)
-    else
-      failed 2 "Please install qemu-img: command\non CentOS run \"yum install qemu-img\"\non Ubuntu/Debian run \"apt-get install qemu-utils\""
-    fi
+    qemuimgcmd=$(which qemu-img)
   elif [[ "$hyper" == "xenserver" ]]; then
     ext="vhd"
     templateId=(`mysql -P $dbPort -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"XenServer\" and removed is null"`)
@@ -256,10 +251,15 @@ if [[ "$fflag" == "1" ]]; then
   fi
 fi
 
-installrslt=$($(dirname $0)/createtmplt.sh -n $localfile -t $destdir -f $tmplfile)
+installrslt=$($(dirname $0)/createtmplt.sh -s 2 -d 'SystemVM Template' -n $localfile -t $destdir/ -f $tmplfile -u -v)
 
 if [[ $? -ne 0 ]]; then
   failed 2 "Failed to install system vm template $tmpltimg to $destdir: $installrslt"
+fi
+
+if [ "$ext" == "ova" ]
+then
+  tar xvf $destdir/$localfile -C $destdir &> /dev/null
 fi
 
 tmpltfile=$destdir/$localfile

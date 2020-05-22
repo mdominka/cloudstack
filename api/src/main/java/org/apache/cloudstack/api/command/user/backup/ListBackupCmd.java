@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.S3BackupResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,11 +61,11 @@ public class ListBackupCmd extends BaseListTaggedResourcesCmd {
     @Override
     public void execute() {
         final List<S3ObjectSummary> result = _BackupService.listBackups(this);
-        final ListResponse<BackupResponse> response = new ListResponse<BackupResponse>();
-        final List<BackupResponse> backupResponses = new ArrayList<BackupResponse>();
+        final ListResponse<S3BackupResponse> response = new ListResponse<>();
+        final List<S3BackupResponse> backupResponses = new ArrayList<>();
 
         for (final S3ObjectSummary s3Object : result) {
-          final BackupResponse backupResponse = _responseGenerator.createBackupResponse(s3Object);
+          final S3BackupResponse backupResponse = _responseGenerator.createBackupResponse(s3Object);
           backupResponse.setObjectName("backup");
           backupResponses.add(backupResponse);
         }

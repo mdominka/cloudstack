@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.storage.dao;
 
+import java.util.Date;
+import java.util.List;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.ImageFormat;
@@ -24,9 +27,6 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
-
-import java.util.Date;
-import java.util.List;
 
 public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.State, Volume.Event, Volume> {
 
@@ -45,6 +45,8 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     List<VolumeVO> findByInstance(long id);
 
     List<VolumeVO> findByInstanceAndType(long id, Volume.Type vType);
+
+    List<VolumeVO> findIncludingRemovedByInstanceAndType(long id, Volume.Type vType);
 
     List<VolumeVO> findByInstanceIdAndPoolId(long instanceId, long poolId);
 
@@ -95,6 +97,8 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     List<Long> listPoolIdsByVolumeCount(long dcId, Long podId, Long clusterId, long accountId);
 
     List<Long> listZoneWidePoolIdsByVolumeCount(long dcId, long accountId);
+
+    List<VolumeVO> findIncludingRemovedByZone(long zoneId);
 
     VolumeVO findByVolumeNameAndFolder(final String volumeName, final String folder);
 

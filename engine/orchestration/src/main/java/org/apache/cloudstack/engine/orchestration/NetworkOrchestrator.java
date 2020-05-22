@@ -17,6 +17,44 @@
 package org.apache.cloudstack.engine.orchestration;
 
 
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
+import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigKey.Scope;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -186,40 +224,8 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
-import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigKey.Scope;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
 
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
+import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 /**
  * NetworkManagerImpl implements NetworkManager.
@@ -249,6 +255,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     NetworkOfferingDao _networkOfferingDao;
     @Inject
     NetworkDao _networksDao;
+    @Inject
+    NetworkDetailsDao networkDetailsDao;
     @Inject
     NicDao _nicDao;
     @Inject
@@ -696,6 +704,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         final NetworkVO networkPersisted = _networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated,
                                 finalizeServicesAndProvidersForNetwork(offering, plan.getPhysicalNetworkId()));
                         networks.add(networkPersisted);
+
+                        if (network.getPvlanType() != null) {
+                            NetworkDetailVO detailVO = new NetworkDetailVO(networkPersisted.getId(), ApiConstants.ISOLATED_PVLAN_TYPE, network.getPvlanType().toString(), true);
+                            networkDetailsDao.persist(detailVO);
+                        }
 
                         if (predefined instanceof NetworkVO && guru instanceof NetworkGuruAdditionalFunctions){
                             final NetworkGuruAdditionalFunctions functions = (NetworkGuruAdditionalFunctions) guru;
@@ -2017,18 +2030,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (final NicVO nic : nics) {
-            final NetworkVO network = _networksDao.findById(nic.getNetworkId());
-            if (network != null && network.getTrafficType() == TrafficType.Guest) {
-                final String nicIp =
-                    Strings.isNullOrEmpty(nic.getIPv4Address()) ? nic.getIPv6Address()
-                        : nic.getIPv4Address();
-                if (!Strings.isNullOrEmpty(nicIp)) {
-                    NicProfile nicProfile = new NicProfile(nic.getIPv4Address(),
-                        nic.getIPv6Address(), nic.getMacAddress());
-                    nicProfile.setId(nic.getId());
-                    cleanupNicDhcpDnsEntry(network, vm, nicProfile);
-                }
-            }
             removeNic(vm, nic);
         }
     }
@@ -2050,9 +2051,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
 
+        final NetworkVO network = _networksDao.findById(nic.getNetworkId());
+        if (network != null && network.getTrafficType() == TrafficType.Guest) {
+            final String nicIp = Strings.isNullOrEmpty(nic.getIPv4Address()) ? nic.getIPv6Address() : nic.getIPv4Address();
+            if (!Strings.isNullOrEmpty(nicIp)) {
+                NicProfile nicProfile = new NicProfile(nic.getIPv4Address(), nic.getIPv6Address(), nic.getMacAddress());
+                nicProfile.setId(nic.getId());
+                cleanupNicDhcpDnsEntry(network, vm, nicProfile);
+            }
+        }
+
         nic.setState(Nic.State.Deallocating);
         _nicDao.update(nic.getId(), nic);
-        final NetworkVO network = _networksDao.findById(nic.getNetworkId());
         final NicProfile profile = new NicProfile(nic, network, null, null, null, _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(
                 vm.getHypervisorType(), network));
 
@@ -2171,10 +2181,30 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     @DB
+    public Network createPrivateNetwork(final long networkOfferingId, final String name, final String displayText, final String gateway, final String cidr, final String vlanId, final boolean bypassVlanOverlapCheck, final Account owner, final PhysicalNetwork pNtwk, final Long vpcId) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
+        // create network for private gateway
+        return createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId,
+                bypassVlanOverlapCheck, null, owner, null, pNtwk, pNtwk.getDataCenterId(), ACLType.Account, null,
+                vpcId, null, null, true, null, null, null, true);
+    }
+
+    @Override
+    @DB
     public Network createGuestNetwork(final long networkOfferingId, final String name, final String displayText, final String gateway, final String cidr, String vlanId,
                                       boolean bypassVlanOverlapCheck, String networkDomain, final Account owner, final Long domainId, final PhysicalNetwork pNtwk,
                                       final long zoneId, final ACLType aclType, Boolean subdomainAccess, final Long vpcId, final String ip6Gateway, final String ip6Cidr,
-                                      final Boolean isDisplayNetworkEnabled, final String isolatedPvlan, String externalId) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
+                                      final Boolean isDisplayNetworkEnabled, final String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
+        // create Isolated/Shared/L2 network
+        return createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, bypassVlanOverlapCheck,
+                networkDomain, owner, domainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr,
+                isDisplayNetworkEnabled, isolatedPvlan, isolatedPvlanType, externalId, false);
+    }
+
+    @DB
+    private Network createGuestNetwork(final long networkOfferingId, final String name, final String displayText, final String gateway, final String cidr, String vlanId,
+                                      boolean bypassVlanOverlapCheck, String networkDomain, final Account owner, final Long domainId, final PhysicalNetwork pNtwk,
+                                      final long zoneId, final ACLType aclType, Boolean subdomainAccess, final Long vpcId, final String ip6Gateway, final String ip6Cidr,
+                                      final Boolean isDisplayNetworkEnabled, final String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId, final Boolean isPrivateNetwork) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
 
         final NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
         final DataCenterVO zone = _dcDao.findById(zoneId);
@@ -2286,16 +2316,25 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         if (vlanSpecified) {
             URI uri = BroadcastDomainType.fromString(vlanId);
+            // Aux: generate secondary URI for secondary VLAN ID (if provided) for performing checks
+            URI secondaryUri = isNotBlank(isolatedPvlan) ? BroadcastDomainType.fromString(isolatedPvlan) : null;
             //don't allow to specify vlan tag used by physical network for dynamic vlan allocation
             if (!(bypassVlanOverlapCheck && ntwkOff.getGuestType() == GuestType.Shared) && _dcDao.findVnet(zoneId, pNtwk.getId(), BroadcastDomainType.getValue(uri)).size() > 0) {
                 throw new InvalidParameterValueException("The VLAN tag " + vlanId + " is already being used for dynamic vlan allocation for the guest network in zone "
                         + zone.getName());
             }
+            if (secondaryUri != null && !(bypassVlanOverlapCheck && ntwkOff.getGuestType() == GuestType.Shared) &&
+                    _dcDao.findVnet(zoneId, pNtwk.getId(), BroadcastDomainType.getValue(secondaryUri)).size() > 0) {
+                throw new InvalidParameterValueException("The VLAN tag " + isolatedPvlan + " is already being used for dynamic vlan allocation for the guest network in zone "
+                        + zone.getName());
+            }
             if (! UuidUtils.validateUUID(vlanId)){
                 // For Isolated and L2 networks, don't allow to create network with vlan that already exists in the zone
-                if (ntwkOff.getGuestType() == GuestType.Isolated || !hasGuestBypassVlanOverlapCheck(bypassVlanOverlapCheck, ntwkOff)) {
+                if (!hasGuestBypassVlanOverlapCheck(bypassVlanOverlapCheck, ntwkOff, isPrivateNetwork)) {
                     if (_networksDao.listByZoneAndUriAndGuestType(zoneId, uri.toString(), null).size() > 0) {
                         throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists or overlaps with other network vlans in zone " + zoneId);
+                    } else if (secondaryUri != null && _networksDao.listByZoneAndUriAndGuestType(zoneId, secondaryUri.toString(), null).size() > 0) {
+                        throw new InvalidParameterValueException("Network with vlan " + isolatedPvlan + " already exists or overlaps with other network vlans in zone " + zoneId);
                     } else {
                         final List<DataCenterVnetVO> dcVnets = _datacenterVnetDao.findVnet(zoneId, BroadcastDomainType.getValue(uri));
                         //for the network that is created as part of private gateway,
@@ -2442,8 +2481,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         if (vlanIdFinal.equalsIgnoreCase(Vlan.UNTAGGED)) {
                             throw new InvalidParameterValueException("Cannot support pvlan with untagged primary vlan!");
                         }
-                        userNetwork.setBroadcastUri(NetUtils.generateUriForPvlan(vlanIdFinal, isolatedPvlan));
+                        URI uri = NetUtils.generateUriForPvlan(vlanIdFinal, isolatedPvlan);
+                        if (_networksDao.listByPhysicalNetworkPvlan(physicalNetworkId, uri.toString(), isolatedPvlanType).size() > 0) {
+                            throw new InvalidParameterValueException("Network with primary vlan " + vlanIdFinal +
+                                    " and secondary vlan " + isolatedPvlan + " type " + isolatedPvlanType +
+                                    " already exists or overlaps with other network pvlans in zone " + zoneId);
+                        }
+                        userNetwork.setBroadcastUri(uri);
                         userNetwork.setBroadcastDomainType(BroadcastDomainType.Pvlan);
+                        userNetwork.setPvlanType(isolatedPvlanType);
                     }
                 }
 
@@ -2486,8 +2532,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
    * @param bypassVlanOverlapCheck bypass VLAN id/range overlap check
    * @param ntwkOff network offering
    */
-  private boolean hasGuestBypassVlanOverlapCheck(final boolean bypassVlanOverlapCheck, final NetworkOfferingVO ntwkOff) {
-    return bypassVlanOverlapCheck && ntwkOff.getGuestType() != GuestType.Isolated;
+  private boolean hasGuestBypassVlanOverlapCheck(final boolean bypassVlanOverlapCheck, final NetworkOfferingVO ntwkOff, final boolean isPrivateNetwork) {
+    return bypassVlanOverlapCheck && (ntwkOff.getGuestType() == GuestType.Shared || isPrivateNetwork);
   }
 
   /**
@@ -2942,7 +2988,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Override
     public boolean restartNetwork(final Long networkId, final Account callerAccount, final User callerUser, final boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException,
     InsufficientCapacityException {
-
+        boolean status = true;
+        boolean restartRequired = false;
         final NetworkVO network = _networksDao.findById(networkId);
 
         s_logger.debug("Restarting network " + networkId + "...");
@@ -2953,16 +3000,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         if (cleanup) {
             if (!rollingRestartRouters(network, offering, dest, context)) {
-                setRestartRequired(network, true);
-                return false;
+                status = false;
+                restartRequired = true;
             }
-            return true;
+            setRestartRequired(network, restartRequired);
+            return status;
         }
 
         s_logger.debug("Implementing the network " + network + " elements and resources as a part of network restart without cleanup");
         try {
             implementNetworkElementsAndResources(dest, context, network, offering);
-            setRestartRequired(network, true);
+            setRestartRequired(network, false);
             return true;
         } catch (final Exception ex) {
             s_logger.warn("Failed to implement network " + network + " elements and resources as a part of network restart due to ", ex);
@@ -2976,7 +3024,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         for (final VirtualRouter router : routers) {
             if (router.getState() == VirtualMachine.State.Stopped ||
                     router.getState() == VirtualMachine.State.Error ||
-                    router.getState() == VirtualMachine.State.Shutdowned ||
+                    router.getState() == VirtualMachine.State.Shutdown ||
                     router.getState() == VirtualMachine.State.Unknown) {
                 s_logger.debug("Destroying old router " + router);
                 _routerService.destroyRouter(router.getId(), context.getAccount(), context.getCaller().getId());
@@ -3953,6 +4001,71 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         nic.setState(Nic.State.Reserved);
         nic.setVmType(vmType);
         return _nicDao.persist(nic);
+    }
+
+    @DB
+    @Override
+    public Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses)
+            throws ConcurrentOperationException, InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
+        s_logger.debug("Allocating nic for vm " + vm.getUuid() + " in network " + network + " during import");
+        String guestIp = null;
+        if (ipAddresses != null && !Strings.isNullOrEmpty(ipAddresses.getIp4Address())) {
+            if (ipAddresses.getIp4Address().equals("auto")) {
+                ipAddresses.setIp4Address(null);
+            }
+            if (network.getGuestType() != GuestType.L2) {
+                guestIp = _ipAddrMgr.acquireGuestIpAddress(network, ipAddresses.getIp4Address());
+            } else {
+                guestIp = null;
+            }
+            if (guestIp == null && network.getGuestType() != GuestType.L2 && !_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
+                throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP  address for network " + network, DataCenter.class,
+                        network.getDataCenterId());
+            }
+        }
+        final String finalGuestIp = guestIp;
+        final NicVO vo = Transaction.execute(new TransactionCallback<NicVO>() {
+            @Override
+            public NicVO doInTransaction(TransactionStatus status) {
+                NicVO vo = new NicVO(network.getGuruName(), vm.getId(), network.getId(), vm.getType());
+                vo.setMacAddress(macAddress);
+                vo.setAddressFormat(Networks.AddressFormat.Ip4);
+                if (NetUtils.isValidIp4(finalGuestIp) && !Strings.isNullOrEmpty(network.getGateway())) {
+                    vo.setIPv4Address(finalGuestIp);
+                    vo.setIPv4Gateway(network.getGateway());
+                    if (!Strings.isNullOrEmpty(network.getCidr())) {
+                        vo.setIPv4Netmask(NetUtils.cidr2Netmask(network.getCidr()));
+                    }
+                }
+                vo.setBroadcastUri(network.getBroadcastUri());
+                vo.setMode(network.getMode());
+                vo.setState(Nic.State.Reserved);
+                vo.setReservationStrategy(ReservationStrategy.Start);
+                vo.setReservationId(UUID.randomUUID().toString());
+                vo.setIsolationUri(network.getBroadcastUri());
+                vo.setDeviceId(deviceId);
+                vo.setDefaultNic(isDefaultNic);
+                vo = _nicDao.persist(vo);
+
+                int count = 1;
+                if (vo.getVmType() == VirtualMachine.Type.User) {
+                    s_logger.debug("Changing active number of nics for network id=" + network.getUuid() + " on " + count);
+                    _networksDao.changeActiveNicsBy(network.getId(), count);
+                }
+                if (vo.getVmType() == VirtualMachine.Type.User
+                        || vo.getVmType() == VirtualMachine.Type.DomainRouter && _networksDao.findById(network.getId()).getTrafficType() == TrafficType.Guest) {
+                    _networksDao.setCheckForGc(network.getId());
+                }
+
+                return vo;
+            }
+        });
+
+        final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
+        final NicProfile vmNic = new NicProfile(vo, network, vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
+                _networkModel.getNetworkTag(vm.getHypervisorType(), network));
+
+        return new Pair<NicProfile, Integer>(vmNic, Integer.valueOf(deviceId));
     }
 
     @Override

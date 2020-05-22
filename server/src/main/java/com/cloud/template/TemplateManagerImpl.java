@@ -584,10 +584,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     }
                     poolId = storagePool.getId();
                 }
-                template = prepareIso(vm.getIsoId(), vm.getDataCenterId(), dest.getHost().getId(), poolId);
-            } else {
-                template = _tmplFactory.getTemplate(vm.getIsoId(), DataStoreRole.Primary, dest.getDataCenter().getId());
             }
+            template = prepareIso(vm.getIsoId(), vm.getDataCenterId(), dest.getHost().getId(), poolId);
 
             if (template == null){
                 s_logger.error("Failed to prepare ISO on secondary or cache storage");
@@ -927,8 +925,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     }
                 }
             }
-
-
         }
 
         if ((destZoneIds != null) && (destZoneIds.size() > failedZones.size())){
@@ -1185,6 +1181,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VMTemplateVO iso = _tmpltDao.findById(isoId);
         if (iso == null || iso.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find an ISO with id " + isoId);
+        }
+
+        long dcId = vm.getDataCenterId();
+        VMTemplateZoneVO exists = _tmpltZoneDao.findByZoneTemplate(dcId, isoId);
+        if (null == exists) {
+            throw new InvalidParameterValueException("ISO is not available in the zone the VM is in.");
         }
 
         // check permissions

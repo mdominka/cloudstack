@@ -181,6 +181,13 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             since = "4.4")
     private Integer hypervisorSnapshotReserve;
 
+    @Parameter(name = ApiConstants.CACHE_MODE,
+            type = CommandType.STRING,
+            required = false,
+            description = "the cache mode to use for this disk offering. none, writeback or writethrough",
+            since = "4.14")
+    private String cacheMode;
+
     // Introduce 4 new optional paramaters to work custom compute offerings
     @Parameter(name = ApiConstants.CUSTOMIZED,
             type = CommandType.BOOLEAN,
@@ -382,6 +389,10 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public Integer getHypervisorSnapshotReserve() {
         return hypervisorSnapshotReserve;
+    }
+
+    public String getCacheMode() {
+        return cacheMode;
     }
 
     /**

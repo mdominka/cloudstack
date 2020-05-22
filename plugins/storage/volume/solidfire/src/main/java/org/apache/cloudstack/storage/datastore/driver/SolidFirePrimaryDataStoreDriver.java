@@ -23,6 +23,41 @@ import static org.apache.commons.lang.StringUtils.isNotBlank;
 import static org.apache.commons.lang.StringUtils.isNotEmpty;
 import static org.apache.commons.lang3.math.NumberUtils.isParsable;
 
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+
+import com.solidfire.element.api.StartBulkVolumeReadResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.command.CreateObjectAnswer;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -71,45 +106,13 @@ import com.google.common.base.Preconditions;
 import com.solidfire.element.api.GetAsyncResultResult;
 import com.solidfire.element.api.SolidFireElement;
 import com.solidfire.element.api.StartBulkVolumeWriteResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.cloudstack.storage.command.CreateObjectAnswer;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import javax.inject.Inject;
 
 public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final Logger LOGGER = Logger.getLogger(SolidFirePrimaryDataStoreDriver.class);
@@ -123,7 +126,6 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final long MAX_IOPS_FOR_SNAPSHOT_VOLUME = 20000L;
     private static final long INITIAL_DELAY = 2L;
     private static final long DELAY = 1L;
-    private static final long TIMEOUT = 6L;
 
     private static final String BASIC_SF_ID = "basicSfId";
 
@@ -146,6 +148,8 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private SnapshotPolicyDao snapshotPolicyDao;
     @Inject
     private BackupConfigurationDao backupConfigurationDao;
+
+    private ExecutorService executorService;
 
     @Override
     public Map<String, String> getCapabilities() {
@@ -971,6 +975,39 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         callback.complete(result);
+    }
+
+    private void taskExecute(final long sfNewSnapshotId, final long sfVolumeId,
+        final SolidFireUtil.SolidFireConnection sfConnection, final String volumeName,
+        final BackupConfigurationVO s3Config){
+        final String[] jobStatus = new String[2];
+        final SolidFireElement element = SolidFireUtil.getSolidFireElement(sfConnection);
+        if (executorService == null) {
+            executorService = Executors.newFixedThreadPool(5);
+        }
+        final Runnable timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                final StartBulkVolumeReadResult readResult =
+                    SolidFireUtil.startBulkVolumeRead(sfNewSnapshotId, sfConnection, sfVolumeId,
+                    volumeName, s3Config);
+                final GetAsyncResultResult result = element.getAsyncResult(readResult.getAsyncHandle());
+
+                if (result != null) {
+                    jobStatus[0] = result.getStatus();
+
+                    if (result.getResult() != null) {
+                        jobStatus[1] = result.getResult().getMessage();
+                    }
+                }
+
+                if ((jobStatus[0] != null) && jobStatus[0].equals("complete")) {
+                    cancel();
+                }
+            }
+        };
+        executorService.execute(timerTask);
+
     }
 
     private void updateSnapshot(final long csSnapshotId, final long sfSnapshotId,

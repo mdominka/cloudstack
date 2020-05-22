@@ -28,7 +28,7 @@
         sectionSelect: {
             preFilter: function(args) {
                if(isAdmin())
-                   return ["serviceOfferings", "systemServiceOfferings", "diskOfferings", "networkOfferings", "vpcOfferings"];
+                   return ["serviceOfferings", "systemServiceOfferings", "diskOfferings", "networkOfferings", "vpcOfferings", "backupOfferings"];
                else if(isDomainAdmin())
                    return ["serviceOfferings", "diskOfferings"];
                else
@@ -135,6 +135,28 @@
                                             args.response.success({
                                                 data: items
                                             });
+                                        }
+                                    },
+                                    cacheMode: {
+                                        label: 'label.cache.mode',
+                                        docID: 'helpDiskOfferingCacheMode',
+                                        select: function (args) {
+                                            var items = [];
+                                            items.push({
+                                                id: 'none',
+                                                description: 'No disk cache'
+                                            });
+                                            items.push({
+                                                id: 'writeback',
+                                                description: 'Write-back disk caching'
+                                            });
+                                            items.push({
+                                                id: "writethrough",
+                                                description: 'Write-through'
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            })
                                         }
                                     },
                                     offeringType: {
@@ -731,7 +753,8 @@
                                     displaytext: args.data.description,
                                     storageType: args.data.storageType,
                                     provisioningType :args.data.provisioningType,
-                                    customized: !isFixedOfferingType
+                                    customized: !isFixedOfferingType,
+                                    cacheMode: args.data.cacheMode
                                 };
 
                                 //custom fields (begin)
@@ -1221,6 +1244,9 @@
                                     provisioningtype: {
                                         label: 'label.disk.provisioningtype'
                                     },
+                                    cacheMode: {
+                                        label: 'label.cache.mode'
+                                    },
                                     cpunumber: {
                                         label: 'label.num.cpu.cores'
                                     },
@@ -1376,10 +1402,6 @@
                         },
                         displaytext: {
                             label: 'label.description'
-                        },
-                        defaultuse: {
-                            label: 'label.default',
-                            converter: cloudStack.converters.toBooleanText,
                         }
                     },
 
@@ -1440,14 +1462,6 @@
                                                 id: 'secondarystoragevm',
                                                 description: _l('label.secondary.storage.vm')
                                             });
-                                            items.push({
-                                              id: 'internalloadbalancervm',
-                                              description: _l('label.internallbvm')
-                                            });
-                                            items.push({
-                                              id: 'elasticloadbalancervm',
-                                              description: _l('label.elastic.LB')
-                                            });
                                             args.response.success({
                                                 data: items
                                             });
@@ -1493,11 +1507,27 @@
                                             });
                                         }
                                     },
-                                    defaultUse: {
-                                      label: 'label.disk.default',
-                                      docID: 'helpServiceOfferingDefaultUse',
-                                      isBoolean: true,
-                                      isChecked: false
+                                    cacheMode: {
+                                        label: 'label.cache.mode',
+                                        docID: 'helpDiskOfferingCacheMode',
+                                        select: function(args) {
+                                            var items = [];
+                                            items.push({
+                                                id: 'none',
+                                                description: 'No disk cache'
+                                            });
+                                            items.push({
+                                                id: 'writeback',
+                                                description: 'Write-back disk caching'
+                                            });
+                                            items.push({
+                                                id: 'writethrough',
+                                                description: 'Write-through disk caching'
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            })
+                                        }
                                     },
                                     cpuNumber: {
                                         label: 'label.num.cpu.cores',
@@ -1713,7 +1743,7 @@
                                     cpuNumber: args.data.cpuNumber,
                                     cpuSpeed: args.data.cpuSpeed,
                                     memory: args.data.memory,
-                                    defaultUse:  args.data.defaultUse == "on"
+                                    cacheMode: args.data.cacheMode
                                 };
 
                                 if (args.data.networkRate != null && args.data.networkRate.length > 0) {
@@ -1803,7 +1833,6 @@
 
                             notification: {
                                 poll: function(args) {
-                                    $('.section-switcher select').val('systemServiceOfferings').trigger('change');
                                     args.complete();
                                 }
                             }
@@ -1842,10 +1871,8 @@
                                     var data = {
                                         id: args.context.systemServiceOfferings[0].id,
                                         name: args.data.name,
-                                        displaytext: args.data.displaytext,
-                                        defaultuse: args.data.defaultuse == "on"
+                                        displaytext: args.data.displaytext
                                     };
-
                                     $.ajax({
                                         url: createURL('updateServiceOffering'),
                                         data: data,
@@ -1854,7 +1881,6 @@
                                             args.response.success({
                                                 data: item
                                             });
-                                            $('.section-switcher select').val('systemServiceOfferings').trigger('change');
                                         },
                                         error: function(data) {
                                             args.response.error(parseXMLHttpResponse(data));
@@ -1933,12 +1959,6 @@
                                                 case 'secondarystoragevm':
                                                     text = _l('label.secondary.storage.vm');
                                                     break;
-                                                case 'internalloadbalancervm':
-                                                  text = _l('label.internallbvm');
-                                                  break;
-                                                case 'elasticloadbalancervm':
-                                                  text = _l('label.elastic.LB');
-                                                  break;
                                             }
                                             return text;
                                         }
@@ -1949,16 +1969,8 @@
                                     provisioningtype: {
                                         label: 'label.disk.provisioningtype'
                                     },
-                                    defaultuse: {
-                                        label: 'label.disk.default',
-                                        isEditable: true,
-                                        isBoolean: true,
-                                        isChecked: function(args) {
-                                          args.response.success({
-                                            data: args
-                                          })
-                                        },
-                                        converter: cloudStack.converters.toBooleanText
+                                    cacheMode: {
+                                        label: 'label.cache.mode'
                                     },
                                     cpunumber: {
                                         label: 'label.num.cpu.cores'
@@ -2955,6 +2967,270 @@
                                         success: function(json) {
                                             var item = json.listdiskofferingsresponse.diskoffering[0];
                                             args.response.success({
+                                                data: item
+                                            });
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+
+            backupOfferings: {
+                type: 'select',
+                title: 'label.menu.backup.offerings',
+                listView: {
+                    id: 'backupOfferings',
+                    label: 'label.menu.backup.offerings',
+                    fields: {
+                        name: {
+                            label: 'label.name',
+                            editable: true
+                        },
+                        description: {
+                            label: 'label.description'
+                        },
+                        zonename: {
+                            label: 'label.zone',
+                        }
+                    },
+
+                    actions: {
+                        add: {
+                            label: 'label.import.backup.offering',
+                            createForm: {
+                                title: 'label.import.backup.offering',
+                                fields: {
+                                    name: {
+                                        label: 'label.name',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+                                    description: {
+                                        label: 'label.description',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+                                    zoneid: {
+                                        label: 'label.zone',
+                                        validation: {
+                                            required: true
+                                        },
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL("listZones"),
+                                                data: {available: 'true'},
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var items = [];
+                                                    var zoneObjs = json.listzonesresponse.zone;
+                                                    $(zoneObjs).each(function() {
+                                                        items.push({
+                                                            id: this.id,
+                                                            description: this.name
+                                                        });
+                                                    });
+                                                    items.sort(function(a, b) {
+                                                        return a.description.localeCompare(b.description);
+                                                    });
+                                                    items.unshift({
+                                                      id: -1,
+                                                      description: ''
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                    args.$select.change(function() {
+                                                        var $form = $(this).closest('form');
+                                                        var zoneId = $form.find('select#label_zone').val();
+                                                        var extSelect = $form.find('select#label_external_id');
+                                                        extSelect.empty();
+                                                        if (zoneId === -1) {
+                                                          return;
+                                                        }
+                                                        $.ajax({
+                                                            url: createURL("listBackupProviderOfferings"),
+                                                            data: {zoneid: zoneId},
+                                                            dataType: "json",
+                                                            success: function(json) {
+                                                                var items = [];
+                                                                var offerings = json.listbackupproviderofferingsresponse.backupoffering;
+                                                                $(offerings).each(function() {
+                                                                    extSelect.append(new Option(this.name, this.externalid))
+                                                                });
+                                                            }
+                                                        });
+                                                    })
+                                                }
+                                            });
+                                        }
+                                    },
+                                    externalid: {
+                                        label: 'label.external.id',
+                                        select: function(args) {
+                                            args.response.success({
+                                                data: []
+                                            });
+                                        }
+                                    },
+                                    allowuserdrivenbackups: {
+                                        label: 'label.backup.user.driven',
+                                        isBoolean: true,
+                                        isChecked: true
+                                    }
+                                }//end of fields
+                            }, //end of createForm
+
+                            action: function(args) {
+                                $.ajax({
+                                    url: createURL('importBackupOffering'),
+                                    data: {
+                                      name: args.data.name,
+                                      description: args.data.description,
+                                      zoneid: args.data.zoneid,
+                                      externalid: args.data.externalid,
+                                      allowuserdrivenbackups: args.data.allowuserdrivenbackups === 'on'
+                                    },
+                                    dataType: 'json',
+                                    success: function(json) {
+                                        var jid = json.importbackupofferingresponse.jobid;
+                                        args.response.success({
+                                            _custom: {
+                                                jobId: jid,
+                                                getActionFilter: function() {
+                                                    return backupOfferingActionfilter;
+                                                }
+                                            }
+
+                                        });
+                                    },
+                                    error: function(data) {
+                                        args.response.error(parseXMLHttpResponse(data));
+                                    }
+                                });
+                            },
+
+                            notification: {
+                                poll: pollAsyncJobResult
+                            },
+
+                            messages: {
+                                notification: function(args) {
+                                    return 'label.import.backup.offering';
+                                }
+                            }
+                        }
+                    },
+
+                    dataProvider: function(args) {
+                        var data = {};
+                        listViewDataProvider(args, data);
+
+                        $.ajax({
+                            url: createURL('listBackupOfferings'),
+                            data: data,
+                            success: function(json) {
+                                var items = json.listbackupofferingsresponse.backupoffering;
+                                args.response.success({
+                                    data: items
+                                });
+                            },
+                            error: function(data) {
+                                args.response.error(parseXMLHttpResponse(data));
+                            }
+                        });
+                    },
+
+                    detailView: {
+                        name: 'label.system.backup.offering.details',
+                        actions: {
+                            remove: {
+                                label: 'label.action.delete.backup.offering',
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'message.action.delete.backup.offering';
+                                    },
+                                    notification: function(args) {
+                                        return 'label.action.delete.backup.offering';
+                                    }
+                                },
+                                action: function(args) {
+                                    var data = {
+                                        id: args.context.backupOfferings[0].id
+                                    };
+                                    $.ajax({
+                                        url: createURL('deleteBackupOffering'),
+                                        data: data,
+                                        success: function(json) {
+                                            args.response.success();
+                                        },
+                                        error: function(data) {
+                                            args.response.error(parseXMLHttpResponse(data));
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: function(args) {
+                                        args.complete();
+                                    }
+                                }
+                            }
+                        },
+
+                        tabs: {
+                            details: {
+                                title: 'label.details',
+
+                                fields: [{
+                                    name: {
+                                        label: 'label.name',
+                                        isEditable: true,
+                                        validation: {
+                                            required: true
+                                        }
+                                    }
+                                }, {
+                                    id: {
+                                        label: 'label.id'
+                                    },
+                                    description: {
+                                        label: 'label.description',
+                                        isEditable: true,
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+                                    externalid: {
+                                        label: 'label.external.id',
+                                    },
+                                    allowuserdrivenbackups: {
+                                        label: 'label.backup.user.driven'
+                                    },
+                                    zoneid: {
+                                        label: 'label.zone.id'
+                                    },
+                                    created: {
+                                        label: 'label.created',
+                                        converter: cloudStack.converters.toLocalDate
+                                    }
+                                }],
+
+                                dataProvider: function(args) {
+                                    var data = {
+                                        id: args.context.backupOfferings[0].id
+                                    };
+                                    $.ajax({
+                                        url: createURL('listBackupOfferings'),
+                                        data: data,
+                                        success: function(json) {
+                                            var item = json.listbackupofferingsresponse.backupoffering[0];
+                                            args.response.success({
+                                                actionFilter: backupOfferingActionfilter,
                                                 data: item
                                             });
                                         }
@@ -5610,6 +5886,13 @@
         var jsonObj = args.context.item;
         var allowedActions = [];
         allowedActions.push("edit");
+        allowedActions.push("remove");
+        return allowedActions;
+    };
+
+    var backupOfferingActionfilter = function(args) {
+        var jsonObj = args.context.item;
+        var allowedActions = [];
         allowedActions.push("remove");
         return allowedActions;
     };

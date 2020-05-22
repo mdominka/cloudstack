@@ -148,7 +148,7 @@ known_categories = {
     'removeIpFromNic': 'Nic',
     'updateVmNicIp': 'Nic',
     'listNics':'Nic',
-    'AffinityGroup': 'Affinity Group',
+	'AffinityGroup': 'Affinity Group',
     'addImageStore': 'Image Store',
     'listImageStore': 'Image Store',
     'deleteImageStore': 'Image Store',
@@ -156,8 +156,8 @@ known_categories = {
     'deleteSecondaryStagingStore': 'Image Store',
     'listSecondaryStagingStores': 'Image Store',
     'InternalLoadBalancer': 'Internal LB',
-    'DeploymentPlanners': 'Configuration',
-    'ObjectStore': 'Image Store',
+	'DeploymentPlanners': 'Configuration',
+	'ObjectStore': 'Image Store',
     'PortableIp': 'Portable IP',
     'dedicateHost': 'Dedicate Resources',
     'releaseDedicatedHost': 'Dedicate Resources',
@@ -188,8 +188,15 @@ known_categories = {
     'cloudian': 'Cloudian',
     'Sioc' : 'Sioc',
     'Diagnostics': 'Diagnostics',
-    'listBackups': 'Backup',
-    'Management': 'Management'
+    'Management': 'Management',
+    'Backup' : 'Backup and Recovery',
+    'Restore' : 'Backup and Recovery',
+    'UnmanagedInstance': 'Virtual Machine',
+    'KubernetesSupportedVersion': 'Kubernetes Service',
+    'KubernetesCluster': 'Kubernetes Service',
+    'UnmanagedInstance': 'Virtual Machine',
+    'Rolling': 'Rolling Maintenance',
+    'listBackups': 'Backup'
     }
 
 
