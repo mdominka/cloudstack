@@ -111,6 +111,7 @@ import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -149,7 +150,8 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Inject
     private BackupConfigurationDao backupConfigurationDao;
 
-    private ExecutorService executorService;
+    private ExecutorService sfBulkReadExecutorService;
+    private ExecutorService shutdownExecutor;
 
     @Override
     public Map<String, String> getCapabilities() {
@@ -930,7 +932,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 if (snapshotInfo.getLocationType().equals(Snapshot.LocationType.CUSTOMTARGET)) {
                     final List<BackupConfigurationVO> s3config = backupConfigurationDao.listAll();
                     if (!s3config.isEmpty()) {
-                        SolidFireUtil.startBulkVolumeRead(sfNewSnapshotId, sfConnection, sfVolumeId,
+                        scheduleBulkVolumeReadTask(sfNewSnapshotId, sfVolumeId, sfConnection,
                             volumeInfo.getName(), s3config.get(0));
                         updateSnapshot(snapshotInfo.getId(), sfNewSnapshotId, false);
                     }
@@ -977,37 +979,115 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         callback.complete(result);
     }
 
-    private void taskExecute(final long sfNewSnapshotId, final long sfVolumeId,
+    private void scheduleBulkVolumeReadTask(final long sfNewSnapshotId, final long sfVolumeId,
         final SolidFireUtil.SolidFireConnection sfConnection, final String volumeName,
         final BackupConfigurationVO s3Config){
-        final String[] jobStatus = new String[2];
-        final SolidFireElement element = SolidFireUtil.getSolidFireElement(sfConnection);
-        if (executorService == null) {
-            executorService = Executors.newFixedThreadPool(5);
+        if ((sfBulkReadExecutorService == null) || sfBulkReadExecutorService.isShutdown()) {
+            final String maxConcurrentTasks = _configDao.getValue(SnapshotManager.SolidfireS3MaxConcurrentTasks.key());
+            sfBulkReadExecutorService = Executors.newFixedThreadPool(NumbersUtil.parseInt(maxConcurrentTasks, 4));
         }
-        final Runnable timerTask = new TimerTask() {
-            @Override
-            public void run() {
-                final StartBulkVolumeReadResult readResult =
-                    SolidFireUtil.startBulkVolumeRead(sfNewSnapshotId, sfConnection, sfVolumeId,
+
+        sfBulkReadExecutorService.execute(
+            new BulkVolumeReadTask(sfNewSnapshotId, sfConnection, sfVolumeId, volumeName, s3Config));
+
+        if ((shutdownExecutor == null) || shutdownExecutor.isShutdown()) {
+          shutdownExecutor = Executors.newSingleThreadExecutor();
+          shutdownExecutor.execute(new ShutdownTask());
+        }
+    }
+
+    class BulkVolumeReadTask implements Runnable {
+
+        private final long sfNewSnapshotId;
+        private final long sfVolumeId;
+        private final SolidFireUtil.SolidFireConnection sfConnection;
+        private final String volumeName;
+        private final BackupConfigurationVO s3Config;
+
+        final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+
+        BulkVolumeReadTask(final long sfNewSnapshotId,
+            final SolidFireUtil.SolidFireConnection sfConnection, final long sfVolumeId,
+            final String volumeName, final BackupConfigurationVO s3Config) {
+            this.sfNewSnapshotId = sfNewSnapshotId;
+            this.sfConnection = sfConnection;
+            this.sfVolumeId = sfVolumeId;
+            this.volumeName = volumeName;
+            this.s3Config = s3Config;
+        }
+
+        @Override
+        public void run() {
+
+            final SolidFireUtil.SolidFireVolume volume = SolidFireUtil.getVolume(sfConnection, sfVolumeId);
+            final long defaultMaxIOPS = volume.getMaxIops();
+
+            final String maxThrottlingIops = _configDao.getValue(SnapshotManager.SolidfireS3MaxThrottlingIops.key());
+
+            SolidFireUtil.modifyVolumeQoS(sfConnection, sfVolumeId, volume.getMinIops(),
+                NumbersUtil.parseLong(maxThrottlingIops, 20000), volume.getBurstIops());
+
+            final StartBulkVolumeReadResult readResult =
+                SolidFireUtil.startBulkVolumeRead(sfNewSnapshotId, sfConnection, sfVolumeId,
                     volumeName, s3Config);
-                final GetAsyncResultResult result = element.getAsyncResult(readResult.getAsyncHandle());
+            final SolidFireElement element = SolidFireUtil.getSolidFireElement(sfConnection);
 
-                if (result != null) {
-                    jobStatus[0] = result.getStatus();
+            final Runnable timerTask = new TimerTask() {
+                final String[] jobStatus = new String[2];
 
-                    if (result.getResult() != null) {
-                        jobStatus[1] = result.getResult().getMessage();
+                @Override
+                public void run() {
+                    final GetAsyncResultResult result =
+                        element.getAsyncResult(readResult.getAsyncHandle());
+
+                    if (result != null) {
+                        jobStatus[0] = result.getStatus();
+
+                        if (result.getResult() != null) {
+                            jobStatus[1] = result.getResult().getMessage();
+                        }
+                    }
+
+                    if ((jobStatus[0] != null) && jobStatus[0].equals("complete")) {
+                        SolidFireUtil.modifyVolumeQoS(sfConnection, sfVolumeId, volume.getMinIops(),
+                            defaultMaxIOPS, volume.getBurstIops());
+                        executorService.shutdown();
+                        cancel();
                     }
                 }
-
-                if ((jobStatus[0] != null) && jobStatus[0].equals("complete")) {
-                    cancel();
-                }
+            };
+            executorService.scheduleWithFixedDelay(timerTask, INITIAL_DELAY, DELAY, TimeUnit.MINUTES);
+            // min. execution time before force shutdown
+            try {
+              executorService.awaitTermination(20, TimeUnit.MINUTES);
+              if (!executorService.isShutdown()) {
+                executorService.shutdown();
+              }
+            } catch (final InterruptedException ignored) {
             }
-        };
-        executorService.execute(timerTask);
+        }
+    }
 
+    class ShutdownTask implements Runnable {
+
+        final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+
+        @Override
+        public void run() {
+            final Runnable task = new TimerTask() {
+                @Override
+                public void run() {
+                  final long taskCount = ((ThreadPoolExecutor) sfBulkReadExecutorService).getActiveCount();
+                  if (taskCount == 0) {
+                      sfBulkReadExecutorService.shutdown();
+                      executorService.shutdown();
+                      shutdownExecutor.shutdown();
+                      cancel();
+                  }
+                }
+            };
+            executorService.scheduleWithFixedDelay(task, 10, 5, TimeUnit.MINUTES);
+        }
     }
 
     private void updateSnapshot(final long csSnapshotId, final long sfSnapshotId,

@@ -223,7 +223,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {BackupRetryAttempts, BackupRetryInterval, SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection,
-                BackupSnapshotAfterTakingSnapshot, SolidfireMaximumSnapshots, SolidfireS3RevertTimeout};
+                BackupSnapshotAfterTakingSnapshot, SolidfireMaximumSnapshots, SolidfireS3RevertTimeout, SolidfireS3MaxConcurrentTasks, SolidfireS3MaxThrottlingIops};
     }
 
     @Override

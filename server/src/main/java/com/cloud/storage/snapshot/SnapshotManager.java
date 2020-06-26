@@ -67,6 +67,16 @@ public interface SnapshotManager extends Configurable {
         "The maximum execution time in minutes before force shutdown the BulkVolumeWrite"
             + " revert snapshot execution task.", true, ConfigKey.Scope.Global, null);
 
+    public static final ConfigKey<Integer> SolidfireS3MaxThrottlingIops = new ConfigKey<>(Integer.class,
+        "solidfire.s3.max.throttling.iops",  "Snapshots", "20000",
+        "During the S3 backup change the Max-IOPS value of the NetApp volume, reset the original Max-IOPS value of the volume after the backup.",
+        true, ConfigKey.Scope.Global, null);
+
+    public static final ConfigKey<Integer> SolidfireS3MaxConcurrentTasks = new ConfigKey<>(Integer.class,
+        "solidfire.s3.max.concurrent.tasks",  "Snapshots", "4",
+        "The maximum number of simultaneous tasks for the transfer of the snapshots from the Solidfire to the S3 Storage.",
+        true, ConfigKey.Scope.Global, null);
+
     void deletePoliciesForVolume(Long volumeId);
 
     /**
