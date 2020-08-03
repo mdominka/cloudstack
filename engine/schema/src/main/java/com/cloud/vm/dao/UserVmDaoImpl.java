@@ -16,6 +16,23 @@
 // under the License.
 package com.cloud.vm.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.Logger;
+
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
@@ -39,20 +56,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmData.NicData;
 import com.cloud.vm.dao.UserVmData.SecurityGroupData;
-import org.apache.log4j.Logger;
-
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
 
 public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements UserVmDao {
     public static final Logger s_logger = Logger.getLogger(UserVmDaoImpl.class);
@@ -81,6 +84,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     ResourceTagDao _tagsDao;
     @Inject
     NetworkDao networkDao;
+    @Inject
+    NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
 
     private static final String LIST_PODS_HAVING_VMS_FOR_ACCOUNT =
             "SELECT pod_id FROM cloud.vm_instance WHERE data_center_id = ? AND account_id = ? AND pod_id IS NOT NULL AND (state = 'Running' OR state = 'Stopped') "
@@ -312,7 +317,10 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
             nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
             nicSearch.and("removed", nicSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-            if (!Network.GuestType.L2.equals(network.getGuestType())) {
+
+            List<String> networkServices = networkOfferingServiceMapDao.listServicesForNetworkOffering(network.getNetworkOfferingId());
+
+            if (!Network.GuestType.L2.equals(network.getGuestType()) && CollectionUtils.isNotEmpty(networkServices)) {
                 nicSearch.and().op("ip4Address", nicSearch.entity().getIPv4Address(), SearchCriteria.Op.NNULL);
                 nicSearch.or("ip6Address", nicSearch.entity().getIPv6Address(), SearchCriteria.Op.NNULL);
                 nicSearch.cp();
@@ -357,8 +365,10 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
     @Override
     public void loadDetails(UserVmVO vm) {
-        Map<String, String> details = _detailsDao.listDetailsKeyPairs(vm.getId());
-        vm.setDetails(details);
+        if (vm != null ) {
+            Map<String, String> details = _detailsDao.listDetailsKeyPairs(vm.getId());
+            vm.setDetails(details);
+        }
     }
 
     @Override

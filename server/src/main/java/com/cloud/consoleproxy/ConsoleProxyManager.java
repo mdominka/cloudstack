@@ -16,10 +16,10 @@
 // under the License.
 package com.cloud.consoleproxy;
 
-import org.apache.cloudstack.framework.config.ConfigKey;
-
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.ConsoleProxyVO;
+
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
 
@@ -33,12 +33,14 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     public static final int DEFAULT_PROXY_URL_PORT = 80;
     public static final int DEFAULT_PROXY_SESSION_TIMEOUT = 300000;        // 5 minutes
 
+    public static final int DEFAULT_NOVNC_PORT = 8080;
+
     public static final String ALERT_SUBJECT = "proxy-alert";
     public static final String CERTIFICATE_NAME = "CPVMCertificate";
 
-    public static final int DEFAULT_NOVNC_PORT = 8080;
     public static final ConfigKey<Boolean> NoVncConsoleDefault = new ConfigKey<Boolean>("Advanced", Boolean.class, "novnc.console.default", "true",
-            "If true, noVNC console will be default console for virtual machines", true);
+        "If true, noVNC console will be default console for virtual machines", true);
+
     public static final ConfigKey<String> NoVncEncryptionKey = new ConfigKey<String>("Hidden", String.class, "novnc.encryption.key", null,
         "The key to be used to encryption in novnc console. The ConsoleProxy VM needs to be restarted if this changes.", true, ConfigKey.Scope.Global);
     public static final ConfigKey<String> NoVncEncryptionIV = new ConfigKey<String>("Hidden", String.class, "novnc.encryption.iv", null,

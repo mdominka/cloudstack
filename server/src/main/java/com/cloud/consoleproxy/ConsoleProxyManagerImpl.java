@@ -1754,6 +1754,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     public void prepareStop(VirtualMachineProfile profile) {
     }
 
+    @Override
+    public void finalizeUnmanage(VirtualMachine vm) {
+    }
+
     public List<ConsoleProxyAllocator> getConsoleProxyAllocators() {
         return _consoleProxyAllocators;
     }

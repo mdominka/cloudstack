@@ -166,7 +166,7 @@ public class HostResponse extends BaseResponse {
 
     @SerializedName("managementserverid")
     @Param(description = "the management server ID of the host")
-    private Long managementServerId;
+    private String managementServerId;
 
     @SerializedName("clusterid")
     @Param(description = "the cluster ID of the host")
@@ -381,7 +381,7 @@ public class HostResponse extends BaseResponse {
         this.lastPinged = lastPinged;
     }
 
-    public void setManagementServerId(Long managementServerId) {
+    public void setManagementServerId(String managementServerId) {
         this.managementServerId = managementServerId;
     }
 
@@ -503,13 +503,12 @@ public class HostResponse extends BaseResponse {
         detailsCopy.remove("username");
         detailsCopy.remove("password");
 
-        if(detailsCopy.containsKey(Host.HOST_UEFI_ENABLE)) {
+        if (detailsCopy.containsKey(Host.HOST_UEFI_ENABLE)) {
             this.setUefiCapabilty(Boolean.parseBoolean((String) detailsCopy.get(Host.HOST_UEFI_ENABLE)));
             detailsCopy.remove(Host.HOST_UEFI_ENABLE);
         } else {
             this.setUefiCapabilty(new Boolean(false)); // in case of existing host which is not scanned for UEFI capability
         }
-
 
         this.details = detailsCopy;
     }
@@ -633,7 +632,7 @@ public class HostResponse extends BaseResponse {
         return lastPinged;
     }
 
-    public Long getManagementServerId() {
+    public String getManagementServerId() {
         return managementServerId;
     }
 
