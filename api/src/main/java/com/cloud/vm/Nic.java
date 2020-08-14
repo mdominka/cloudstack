@@ -16,17 +16,18 @@
 // under the License.
 package com.cloud.vm;
 
-import com.cloud.network.Networks.AddressFormat;
-import com.cloud.network.Networks.Mode;
-import com.cloud.utils.fsm.FiniteState;
-import com.cloud.utils.fsm.StateMachine;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
 import java.net.URI;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.network.Networks.AddressFormat;
+import com.cloud.network.Networks.Mode;
+import com.cloud.utils.fsm.FiniteState;
+import com.cloud.utils.fsm.StateMachine;
 
 /**
  * Nic represents one nic on the VM.
@@ -139,8 +140,6 @@ public interface Nic extends Identity, InternalIdentity {
     AddressFormat getAddressFormat();
 
     boolean getSecondaryIp();
-
-    int getMtu();
 
     //
     // IPv4

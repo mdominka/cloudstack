@@ -16,6 +16,14 @@
 // under the License.
 package com.cloud.hypervisor.hyperv.guru;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -34,14 +42,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
 
 /**
  * Implementation of Hypervisor guru for Hyper-V.
@@ -135,7 +135,6 @@ public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
                         nicTo.setGateway(network.getGateway());
                     }
                     nicTo.setDefaultNic(false);
-                    nicTo.setMtu(profile.getMtu());
                     nicTo.setBroadcastUri(profile.getBroadCastUri());
                     nicTo.setIsolationuri(profile.getIsolationUri());
 

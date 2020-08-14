@@ -621,7 +621,6 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             nicResponse.setTrafficType(rs.getString("networks.traffic_type"));
             nicResponse.setType(rs.getString("networks.guest_type"));
             nicResponse.setIsDefault(rs.getBoolean("nics.default_nic"));
-            nicResponse.setMtu(rs.getInt("nics.mtu"));
             nicResponse.setObjectName("nic");
             userVmData.addNic(nicResponse);
         }

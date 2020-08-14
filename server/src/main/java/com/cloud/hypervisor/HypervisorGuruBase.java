@@ -98,7 +98,6 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setDns2(profile.getIPv4Dns2());
         to.setGateway(profile.getIPv4Gateway());
         to.setDefaultNic(profile.isDefaultNic());
-        to.setMtu(profile.getMtu());
         to.setBroadcastUri(profile.getBroadCastUri());
         to.setIsolationuri(profile.getIsolationUri());
         to.setNetworkRateMbps(profile.getNetworkRate());

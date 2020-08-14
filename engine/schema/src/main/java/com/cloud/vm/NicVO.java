@@ -16,10 +16,6 @@
 // under the License.
 package com.cloud.vm;
 
-import com.cloud.network.Networks.AddressFormat;
-import com.cloud.network.Networks.Mode;
-import com.cloud.utils.db.GenericDao;
-
 import java.net.URI;
 import java.util.Date;
 import java.util.UUID;
@@ -33,6 +29,10 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+
+import com.cloud.network.Networks.AddressFormat;
+import com.cloud.network.Networks.Mode;
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "nics")
@@ -123,9 +123,6 @@ public class NicVO implements Nic {
 
     @Column(name = "secondary_ip")
     boolean secondaryIp;
-
-    @Column(name = "mtu")
-    int mtu;
 
     @Transient
     transient String nsxLogicalSwitchUuid;
@@ -333,8 +330,6 @@ public class NicVO implements Nic {
             .append(reservationId)
             .append("-")
             .append(iPv4Address)
-            .append("-")
-            .append(mtu)
             .append("]")
             .toString();
     }
@@ -378,15 +373,6 @@ public class NicVO implements Nic {
 
     public void setSecondaryIp(boolean secondaryIp) {
         this.secondaryIp = secondaryIp;
-    }
-
-    @Override
-    public int getMtu() {
-        return mtu;
-    }
-
-    public void setMtu(int mtu) {
-        this.mtu = mtu;
     }
 
     public void setVmType(VirtualMachine.Type vmType) {

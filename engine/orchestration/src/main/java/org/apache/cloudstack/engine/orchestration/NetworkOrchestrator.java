@@ -985,7 +985,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         vo.setDefaultNic(profile.isDefaultNic());
-        vo.setMtu(profile.getMtu());
 
         vo.setIPv4Address(profile.getIPv4Address());
         vo.setAddressFormat(profile.getFormat());
@@ -1024,7 +1023,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (profile.getReservationStrategy() != null) {
             vo.setReservationStrategy(profile.getReservationStrategy());
         }
-        vo.setMtu(profile.getMtu());
         vo.setBroadcastUri(profile.getBroadCastUri());
         vo.setIsolationUri(profile.getIsolationUri());
         vo.setIPv4Netmask(profile.getIPv4Netmask());
@@ -1056,7 +1054,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             to.setPxeDisable(true);
         }
         to.setDefaultNic(nic.isDefaultNic());
-        to.setMtu(nic.getMtu());
         to.setBroadcastUri(nic.getBroadcastUri());
         to.setIsolationuri(nic.getIsolationUri());
         if (profile != null) {
@@ -1725,7 +1722,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             nic.setMacAddress(profile.getMacAddress());
             nic.setIsolationUri(profile.getIsolationUri());
             nic.setBroadcastUri(profile.getBroadCastUri());
-            nic.setMtu(profile.getMtu());
             nic.setReserver(guru.getName());
             nic.setState(Nic.State.Reserved);
             nic.setIPv4Netmask(profile.getIPv4Netmask());
@@ -3821,6 +3817,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final DeployDestination dest = new DeployDestination(dc, null, null, host);
 
         NicProfile nic = getNicProfileForVm(network, requested, vm);
+
         //1) allocate nic (if needed) Always allocate if it is a user vm
         if (nic == null || vmProfile.getType() == VirtualMachine.Type.User) {
             final int deviceId = _nicDao.getFreeDeviceId(vm.getId());
