@@ -1065,7 +1065,7 @@ public class SolidFireUtil {
 
     private static Map<String, Object> buildScriptParameters(
         final String clusterPrefix, final long volumeId, final String volumeName,
-        final Map<String, String> parameters, final String fileName,
+        final Map<String, String> parameters, final String fileName, final String snapshotType,
         final Boolean hasWriteParameters) {
 
         final Map<String, Integer> rangeParameters = new HashMap<>();
@@ -1073,7 +1073,10 @@ public class SolidFireUtil {
         rangeParameters.put("blocks", S3_BLOCK_SIZE);
 
         final StringBuilder prefix = new StringBuilder();
-        prefix.append(clusterPrefix).append(volumeName).append('-').append(volumeId);
+        prefix.append(clusterPrefix)
+            .append(snapshotType)
+            .append('/')
+            .append(volumeName).append('-').append(volumeId);
 
         if (isNotBlank(fileName)) {
             prefix.append('/').append(fileName);
@@ -1098,13 +1101,13 @@ public class SolidFireUtil {
     }
 
     public static StartBulkVolumeReadResult startBulkVolumeRead(final long snapShotId, final SolidFireConnection sfConnection,
-        final long volumeId, final String volumeName, final BackupConfigurationVO s3Config) {
+        final long volumeId, final String volumeName, final BackupConfigurationVO s3Config, final String snapshotType) {
 
         final SolidFireElement sfe = getSolidFireElement(sfConnection);
 
         final Map<String, String> parameters = buildS3Parameters(s3Config, false);
         final Map<String, Object> scriptParameters = buildScriptParameters(getClusterPrefix(sfConnection),
-            volumeId, volumeName, parameters, null, true);
+            volumeId, volumeName, parameters, null, snapshotType, true);
 
         final StartBulkVolumeReadRequest request = StartBulkVolumeReadRequest.builder()
             .format(S3_FORMAT)
@@ -1119,14 +1122,14 @@ public class SolidFireUtil {
 
     public static StartBulkVolumeWriteResult startBulkVolumeWrite(
         final SolidFireConnection sfConnection, final long volumeId, final String volumeName,
-        final BackupConfigurationVO s3Config, final String fileName) {
+        final BackupConfigurationVO s3Config, final String fileName, final String snapshotType) {
 
         LOGGER.info(format("<<< Start Solidfire BulkVolumeWrite >>> for Volume: ID: %1$d, Name: %2$s",
             volumeId, volumeName));
 
         final Map<String, String> parameters = buildS3Parameters(s3Config, true);
         final Map<String, Object> scriptParameters = buildScriptParameters(getClusterPrefix(sfConnection),
-            volumeId, volumeName, parameters, fileName, false);
+            volumeId, volumeName, parameters, fileName, snapshotType,false);
 
         final StartBulkVolumeWriteRequest request = StartBulkVolumeWriteRequest.builder()
             .format(S3_FORMAT)

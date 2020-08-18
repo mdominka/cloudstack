@@ -935,7 +935,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     final List<BackupConfigurationVO> s3config = backupConfigurationDao.listAll();
                     if (!s3config.isEmpty()) {
                         scheduleBulkVolumeReadTask(sfNewSnapshotId, sfVolumeId, sfConnection,
-                            volumeInfo.getName(), s3config.get(0));
+                            volumeInfo.getName(), s3config.get(0), snapshotInfo.getRecurringType().name());
                         updateSnapshot(snapshotInfo.getId(), sfNewSnapshotId, false);
                     }
                 }
@@ -983,14 +983,14 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     private void scheduleBulkVolumeReadTask(final long sfNewSnapshotId, final long sfVolumeId,
         final SolidFireUtil.SolidFireConnection sfConnection, final String volumeName,
-        final BackupConfigurationVO s3Config){
+        final BackupConfigurationVO s3Config, final String snapshotType){
         if ((sfBulkReadExecutorService == null) || sfBulkReadExecutorService.isShutdown()) {
             final String maxConcurrentTasks = _configDao.getValue(SnapshotManager.SolidfireS3MaxConcurrentTasks.key());
             sfBulkReadExecutorService = Executors.newFixedThreadPool(NumbersUtil.parseInt(maxConcurrentTasks, 4));
         }
 
         sfBulkReadExecutorService.execute(
-            new BulkVolumeReadTask(sfNewSnapshotId, sfConnection, sfVolumeId, volumeName, s3Config));
+            new BulkVolumeReadTask(sfNewSnapshotId, sfConnection, sfVolumeId, volumeName, s3Config, snapshotType));
 
         if ((shutdownExecutor == null) || shutdownExecutor.isShutdown()) {
           shutdownExecutor = Executors.newSingleThreadExecutor();
@@ -1005,17 +1005,19 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         private final SolidFireUtil.SolidFireConnection sfConnection;
         private final String volumeName;
         private final BackupConfigurationVO s3Config;
+        private final String snapshotType;
 
         final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
         BulkVolumeReadTask(final long sfNewSnapshotId,
             final SolidFireUtil.SolidFireConnection sfConnection, final long sfVolumeId,
-            final String volumeName, final BackupConfigurationVO s3Config) {
+            final String volumeName, final BackupConfigurationVO s3Config, final String snapshotType) {
             this.sfNewSnapshotId = sfNewSnapshotId;
             this.sfConnection = sfConnection;
             this.sfVolumeId = sfVolumeId;
             this.volumeName = volumeName;
             this.s3Config = s3Config;
+            this.snapshotType = snapshotType;
         }
 
         @Override
@@ -1031,7 +1033,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             final StartBulkVolumeReadResult readResult =
                 SolidFireUtil.startBulkVolumeRead(sfNewSnapshotId, sfConnection, sfVolumeId,
-                    volumeName, s3Config);
+                    volumeName, s3Config, snapshotType);
             final SolidFireElement element = SolidFireUtil.getSolidFireElement(sfConnection);
 
             final Runnable timerTask = new TimerTask() {
@@ -1447,8 +1449,14 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 if (isNotEmpty(config) && (snapshotPolicy != null) && snapshotPolicy.isS3backup()) {
                     final S3TO s3TO = buildS3Object(config);
 
+                    final String snapshotType = snapshotInfo.getRecurringType().name();
+                    final StringBuilder s3Path = new StringBuilder();
+                    s3Path.append(SolidFireUtil.getClusterPrefix(sfConnection))
+                        .append(snapshotType)
+                        .append('/');
+
                     final List<S3ObjectSummary> s3Objects = S3Utils.listDirectory(s3TO,
-                        config.get(0).getBucket(), SolidFireUtil.getClusterPrefix(sfConnection));
+                        config.get(0).getBucket(), s3Path.toString());
 
                     filterS3Objects(s3Objects, sfSnapshotId)
                         .forEach(s3Object -> S3Utils.deleteObject(s3TO, config.get(0).getBucket(), s3Object.getKey()));
@@ -1582,7 +1590,8 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         final StartBulkVolumeWriteResult writeResult = SolidFireUtil.startBulkVolumeWrite(
-            sfConnection, sfVolumeId, volumeInfo.getName(), s3config.get(0), fileName);
+            sfConnection, sfVolumeId, volumeInfo.getName(), s3config.get(0), fileName,
+            snapshot.getRecurringType().name());
 
         if (!waitForBulkVolumeWriteCompletion(sfConnection, writeResult)) {
             final String errMsg = "The BulkVolumeWrite operation on the Solidfire doesn't "
