@@ -1028,8 +1028,8 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             final String maxThrottlingIops = _configDao.getValue(SnapshotManager.SolidfireS3MaxThrottlingIops.key());
 
-            SolidFireUtil.modifyVolumeQoS(sfConnection, sfVolumeId, volume.getMinIops(),
-                NumbersUtil.parseLong(maxThrottlingIops, 20000), volume.getBurstIops());
+            // SolidFireUtil.modifyVolumeQoS(sfConnection, sfVolumeId, volume.getMinIops(),
+            //    NumbersUtil.parseLong(maxThrottlingIops, 20000), volume.getBurstIops());
 
             final StartBulkVolumeReadResult readResult =
                 SolidFireUtil.startBulkVolumeRead(sfNewSnapshotId, sfConnection, sfVolumeId,
@@ -1053,8 +1053,8 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     }
 
                     if ((jobStatus[0] != null) && jobStatus[0].equals("complete")) {
-                        SolidFireUtil.modifyVolumeQoS(sfConnection, sfVolumeId, volume.getMinIops(),
-                            defaultMaxIOPS, volume.getBurstIops());
+                        // SolidFireUtil.modifyVolumeQoS(sfConnection, sfVolumeId, volume.getMinIops(),
+                        //    defaultMaxIOPS, volume.getBurstIops());
                         executorService.shutdown();
                         cancel();
                     }
@@ -1090,7 +1090,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                   }
                 }
             };
-            executorService.scheduleWithFixedDelay(task, 10, 5, TimeUnit.MINUTES);
+            executorService.scheduleWithFixedDelay(task, 20, 5, TimeUnit.MINUTES);
         }
     }
 
