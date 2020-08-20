@@ -33,12 +33,14 @@ import com.cloud.vm.snapshot.dao.BackupConfigurationDao;
 import org.apache.cloudstack.api.command.user.backup.ListBackupCmd;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -67,21 +69,39 @@ public class BackupManagerImpl extends ManagerBase implements BackupService {
       return emptyList();
     }
 
-    final S3TO s3TO = buildS3Object(config);
-
     final List<StoragePoolDetailVO> storagePoolDetails =
         storagePoolDetailsDao.findDetails(CLUSTER_PREFIX, null, null);
 
     if (isNotEmpty(storagePoolDetails)) {
       final List<S3ObjectSummary> s3ObjectSummaries = new ArrayList<>();
       storagePoolDetails.stream().map(StoragePoolDetailVO::getValue)
-          .forEach(value -> s3ObjectSummaries.addAll(doFilterS3Objects(S3Utils.listDirectory(s3TO,
-              config.get(0).getBucket(), value + SEPARATOR), cmd)));
+          .forEach(cluster ->
+              s3ObjectSummaries.addAll(doFilterS3Objects(listAllS3Objects(config, cluster), cmd)));
 
       return s3ObjectSummaries;
     }
-    return doFilterS3Objects(S3Utils.listDirectory(s3TO, config.get(0).getBucket(),
-        CLUSTER_PREFIX_DEFAULT), cmd);
+
+    return doFilterS3Objects(listAllS3Objects(config, null), cmd);
+  }
+
+  private List<S3ObjectSummary> listAllS3Objects(final List<BackupConfigurationVO> config,
+      final String cluster) {
+    final S3TO s3TO = buildS3Object(config);
+    final List<S3ObjectSummary> s3ObjectSummaries = new ArrayList<>();
+
+    final String[] snapshotTypes = {"MANUAL", "HOURLY", "DAILY", "WEEKLY", "MONTHLY"};
+    Arrays.asList(snapshotTypes).forEach(st -> {
+      if (StringUtils.isNotBlank(cluster))
+        s3ObjectSummaries.addAll(
+            S3Utils.listDirectory(s3TO, config.get(0).getBucket(), cluster + SEPARATOR +
+                st + SEPARATOR));
+      else
+        s3ObjectSummaries.addAll(
+            S3Utils.listDirectory(s3TO, config.get(0).getBucket(), CLUSTER_PREFIX_DEFAULT
+                + st + SEPARATOR));
+    });
+
+    return s3ObjectSummaries;
   }
 
   private List<S3ObjectSummary> doFilterS3Objects(final List<S3ObjectSummary> listDirectory,
