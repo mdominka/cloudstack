@@ -672,8 +672,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public S3BackupResponse createBackupResponse(final S3ObjectSummary backup) {
-        final String volumeInfo = backup.getKey().split("/")[1];
-        final String fileName = backup.getKey().split("/")[2];
+        final String volumeInfo = backup.getKey().split("/")[2];
+        final String fileName = backup.getKey().split("/")[3];
 
         final S3BackupResponse backupResponse = new S3BackupResponse();
         backupResponse.setName(fileName);
