@@ -55,8 +55,9 @@ public class ListBackupCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.CREATED, type = CommandType.STRING, description = "the creation date of the snapshot")
     private String creationDate;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "show backup state")
-    private String state;
+    @Parameter(name = ApiConstants.SNAPSHOT_TYPE, type = CommandType.STRING,
+        description = "the recurring type of the snapshot: manual, hourly, daily, weekly, monthly")
+    private String snapshotType;
 
     @Override
     public void execute() {
@@ -120,12 +121,12 @@ public class ListBackupCmd extends BaseListTaggedResourcesCmd {
         this.creationDate = creationDate;
     }
 
-    public String getState() {
-        return state;
+    public String getSnapshotType() {
+        return snapshotType;
     }
 
-    public void setState(final String state) {
-        this.state = state;
+    public void setSnapshotType(final String snapshotType) {
+        this.snapshotType = snapshotType;
     }
 
     public Long getSnapshotId() {

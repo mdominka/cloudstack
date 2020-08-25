@@ -162,8 +162,7 @@ public class SolidFireUtil {
     private static final String S3_ENDPOINT = "s3";
     private static final String S3_FORMAT = "native";
     private static final String S3_SCRIPT = "bv_internal.py";
-    private static final int S3_BLOCK_SIZE = 262144;
-    private static final int S3_LBA_SIZE = 0;
+    private static final long S3_LBA_SIZE = 0;
 
 
     public static class SolidFireConnection {
@@ -1066,11 +1065,14 @@ public class SolidFireUtil {
     private static Map<String, Object> buildScriptParameters(
         final String clusterPrefix, final long volumeId, final String volumeName,
         final Map<String, String> parameters, final String fileName, final String snapshotType,
-        final Boolean hasWriteParameters) {
+        final SolidFireElement sfe, final Boolean hasWriteParameters) {
 
-        final Map<String, Integer> rangeParameters = new HashMap<>();
+        final long nonZeroBlksize = sfe.getVolumeStats(volumeId).getVolumeStats().getNonZeroBlocks();
+        final long zeroBlksize = sfe.getVolumeStats(volumeId).getVolumeStats().getZeroBlocks();
+
+        final Map<String, Long> rangeParameters = new HashMap<>();
         rangeParameters.put("lba", S3_LBA_SIZE);
-        rangeParameters.put("blocks", S3_BLOCK_SIZE);
+        rangeParameters.put("blocks", nonZeroBlksize + zeroBlksize);
 
         final StringBuilder prefix = new StringBuilder();
         prefix.append(clusterPrefix)
@@ -1094,7 +1096,7 @@ public class SolidFireUtil {
                     " format: %3$s ",
                 prefix, S3_ENDPOINT, S3_FORMAT));
             LOGGER.info(format("with \"range\" parameters: lba: %1$d, blocks: %2$d ", S3_LBA_SIZE,
-                S3_BLOCK_SIZE));
+                nonZeroBlksize + zeroBlksize));
         }
 
         return scriptParameters;
@@ -1107,7 +1109,7 @@ public class SolidFireUtil {
 
         final Map<String, String> parameters = buildS3Parameters(s3Config, false);
         final Map<String, Object> scriptParameters = buildScriptParameters(getClusterPrefix(sfConnection),
-            volumeId, volumeName, parameters, null, snapshotType, true);
+            volumeId, volumeName, parameters, null, snapshotType, sfe, true);
 
         final StartBulkVolumeReadRequest request = StartBulkVolumeReadRequest.builder()
             .format(S3_FORMAT)
@@ -1124,12 +1126,14 @@ public class SolidFireUtil {
         final SolidFireConnection sfConnection, final long volumeId, final String volumeName,
         final BackupConfigurationVO s3Config, final String fileName, final String snapshotType) {
 
+        final SolidFireElement sfe = getSolidFireElement(sfConnection);
+
         LOGGER.info(format("<<< Start Solidfire BulkVolumeWrite >>> for Volume: ID: %1$d, Name: %2$s",
             volumeId, volumeName));
 
         final Map<String, String> parameters = buildS3Parameters(s3Config, true);
         final Map<String, Object> scriptParameters = buildScriptParameters(getClusterPrefix(sfConnection),
-            volumeId, volumeName, parameters, fileName, snapshotType,false);
+            volumeId, volumeName, parameters, fileName, snapshotType, sfe,false);
 
         final StartBulkVolumeWriteRequest request = StartBulkVolumeWriteRequest.builder()
             .format(S3_FORMAT)
@@ -1140,7 +1144,7 @@ public class SolidFireUtil {
 
         LOGGER.info(format("with \"script\" parameter: %1$s", S3_SCRIPT));
 
-        return getSolidFireElement(sfConnection).startBulkVolumeWrite(request);
+        return sfe.startBulkVolumeWrite(request);
     }
 
     public static String getClusterPrefix(final SolidFireConnection sfConnection) {

@@ -3137,12 +3137,8 @@
                     created: {
                         label: 'label.created'
                     },
-                    state: {
-                      label: 'label.state',
-                      indicator: {
-                           'BackedUp': 'on',
-                           'Destroyed': 'off'
-                      }
+                    snapshottype: {
+                      label: 'label.volume.snapshot.type'
                     }
                   },
                     advSearchFields: {
@@ -3237,11 +3233,11 @@
                                     snapshotid: {
                                         label: 'label.volume.snapshot.id'
                                     },
-                                  created: {
-                                    label: 'label.created'
+                                    created: {
+                                        label: 'label.created'
                                     },
-                                    state: {
-                                        label: 'label.state'
+                                    snapshottype: {
+                                        label: 'label.volume.snapshot.type'
                                     }
                                 }],
 
@@ -3257,7 +3253,7 @@
                                     volumename: args.context.backupsnapshots[0].volumename,
                                     volumeid: args.context.backupsnapshots[0].volumeid,
                                     created: args.context.backupsnapshots[0].created,
-                                    state: args.context.backupsnapshots[0].state
+                                    snapshottype: args.context.backupsnapshots[0].snapshottype
                                   };
                                     $.ajax({
                                         url: createURL("listBackups&snapshotid=" + args.context.backupsnapshots[0].snapshotid),

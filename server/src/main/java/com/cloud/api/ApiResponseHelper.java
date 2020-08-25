@@ -672,6 +672,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public S3BackupResponse createBackupResponse(final S3ObjectSummary backup) {
+        final String snapshotType = backup.getKey().split("/")[1];
         final String volumeInfo = backup.getKey().split("/")[2];
         final String fileName = backup.getKey().split("/")[3];
 
@@ -687,7 +688,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
         backupResponse.setCreationDate(dateTime.format(formatter));
-        backupResponse.setState("BackedUp");
+        backupResponse.setSnapshotType(snapshotType);
 
         final int lastIndex = volumeInfo.lastIndexOf('-');
         backupResponse.setVolumeName(volumeInfo.substring(0, lastIndex));

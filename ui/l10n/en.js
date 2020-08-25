@@ -1932,6 +1932,7 @@ var dictionary = {
 "label.volume.migrated":"Volume migrated",
 "label.volume.name":"Volume Name",
   "label.volume.snapshot.id": "Snapshot ID",
+  "label.volume.snapshot.type": "Type",
 "label.volumes":"Volumes",
 "label.vpc":"VPC",
 "label.vpc.distributedvpcrouter":"Distributed VPC Router",

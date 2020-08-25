@@ -40,8 +40,8 @@ public interface Backup
 
     public String getCreationDate();
 
-    public String setState(final String state);
+    public String setSnapshotType(final String snapshotType);
 
-    public String getState();
+    public String getSnapshotType();
 
 }

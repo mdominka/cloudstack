@@ -47,9 +47,9 @@ public class S3BackupResponse extends BaseResponse {
   @Param(description = "the creation date of the snapshot")
   private String creationDate;
 
-  @SerializedName(ApiConstants.STATE)
-  @Param(description = "show backup state")
-  private String state;
+  @SerializedName(ApiConstants.SNAPSHOT_TYPE)
+  @Param(description = "the type of the snapshot: manual, hourly, daily, weekly, monthly")
+  private String snapshotType;
 
   public void setName(String name) {
     this.name = name;
@@ -91,11 +91,11 @@ public class S3BackupResponse extends BaseResponse {
     this.volumeName = volumeName;
   }
 
-  public String getState() {
-    return state;
+  public String getSnapshotType() {
+    return snapshotType;
   }
 
-  public void setState(final String state) {
-    this.state = state;
+  public void setSnapshotType(final String snapshotType) {
+    this.snapshotType = snapshotType;
   }
 }
