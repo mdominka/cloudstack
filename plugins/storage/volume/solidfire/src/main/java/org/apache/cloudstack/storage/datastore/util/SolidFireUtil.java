@@ -1075,11 +1075,11 @@ public class SolidFireUtil {
         rangeParameters.put("blocks", nonZeroBlksize + zeroBlksize);
 
         final StringBuilder prefix = new StringBuilder();
-        prefix.append(clusterPrefix)
-            .append(snapshotType)
-            .append('/')
-            .append(volumeName).append('-').append(volumeId);
-
+        prefix.append(clusterPrefix);
+        if (isNotBlank(snapshotType)) {
+            prefix.append(snapshotType).append('/');
+        }
+        prefix.append(volumeName).append('-').append(volumeId);
         if (isNotBlank(fileName)) {
             prefix.append('/').append(fileName);
         }
@@ -1111,13 +1111,24 @@ public class SolidFireUtil {
         final Map<String, Object> scriptParameters = buildScriptParameters(getClusterPrefix(sfConnection),
             volumeId, volumeName, parameters, null, snapshotType, sfe, true);
 
-        final StartBulkVolumeReadRequest request = StartBulkVolumeReadRequest.builder()
-            .format(S3_FORMAT)
-            .volumeID(volumeId)
-            .optionalSnapshotID(snapShotId)
-            .optionalScript(S3_SCRIPT)
-            .optionalScriptParameters(scriptParameters)
-            .build();
+        final StartBulkVolumeReadRequest request;
+
+        if (snapShotId == 0) {
+            request = StartBulkVolumeReadRequest.builder()
+                .format(S3_FORMAT)
+                .volumeID(volumeId)
+                .optionalScript(S3_SCRIPT)
+                .optionalScriptParameters(scriptParameters)
+                .build();
+        } else {
+            request = StartBulkVolumeReadRequest.builder()
+                .format(S3_FORMAT)
+                .volumeID(volumeId)
+                .optionalSnapshotID(snapShotId)
+                .optionalScript(S3_SCRIPT)
+                .optionalScriptParameters(scriptParameters)
+                .build();
+        }
 
         return sfe.startBulkVolumeRead(request);
     }

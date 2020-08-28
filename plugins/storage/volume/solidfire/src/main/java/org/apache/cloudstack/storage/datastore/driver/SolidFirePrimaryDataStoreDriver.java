@@ -958,6 +958,12 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 updateSnapshotDetails(snapshotInfo.getId(), sfNewVolumeId, storagePoolId, sfVolumeSize, sfNewVolume.getIqn());
 
                 snapshotObjectTo.setPath("SfVolumeId=" + sfNewVolumeId);
+
+                final List<BackupConfigurationVO> s3config = backupConfigurationDao.listAll();
+                if (!s3config.isEmpty()) {
+                        scheduleBulkVolumeReadTask(0, sfNewVolumeId, sfConnection,
+                            sfNewVolumeName, s3config.get(0), null);
+                }
             }
 
             // Now that we have successfully created a volume or a snapshot, update the space usage in the cloud.storage_pool table
