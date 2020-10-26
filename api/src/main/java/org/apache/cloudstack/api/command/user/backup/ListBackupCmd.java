@@ -67,7 +67,7 @@ public class ListBackupCmd extends BaseListTaggedResourcesCmd {
 
         for (final S3ObjectSummary s3Object : result) {
           final S3BackupResponse backupResponse = _responseGenerator.createBackupResponse(s3Object);
-          backupResponse.setObjectName("s3backup");
+          backupResponse.setObjectName("backup");
           backupResponses.add(backupResponse);
         }
 

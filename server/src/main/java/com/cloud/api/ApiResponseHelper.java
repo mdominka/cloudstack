@@ -693,7 +693,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         final int lastIndex = volumeInfo.lastIndexOf('-');
         backupResponse.setVolumeName(volumeInfo.substring(0, lastIndex));
         backupResponse.setVolumeId(parseLong(volumeInfo.substring(lastIndex + 1)));
-        backupResponse.setObjectName("s3backup");
+        backupResponse.setObjectName("backup");
         return backupResponse;
     }
 
