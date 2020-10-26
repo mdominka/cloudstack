@@ -3163,13 +3163,13 @@
                     listViewDataProvider(args, data);
 
                     $.ajax({
-                      url: createURL('listBackups'),
+                      url: createURL('listS3Backups'),
                       data: data,
                       dataType: "json",
                       async: true,
                       success: function(json) {
                         var jsonObj;
-                        jsonObj = json.listbackupsresponse.backup;
+                        jsonObj = json.lists3backupsresponse.backup;
                         args.response.success({
                           data: jsonObj
                         });
@@ -3256,7 +3256,7 @@
                                     snapshottype: args.context.backupsnapshots[0].snapshottype
                                   };
                                     $.ajax({
-                                        url: createURL("listBackups&snapshotid=" + args.context.backupsnapshots[0].snapshotid),
+                                        url: createURL("listS3Backups&snapshotid=" + args.context.backupsnapshots[0].snapshotid),
                                         dataType: "json",
                                         async: true,
                                         success: function (json) {
