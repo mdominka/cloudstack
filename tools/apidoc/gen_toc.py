@@ -196,7 +196,8 @@ known_categories = {
     'KubernetesCluster': 'Kubernetes Service',
     'UnmanagedInstance': 'Virtual Machine',
     'Rolling': 'Rolling Maintenance',
-    'listBackups': 'Backup'
+    'listBackups': 'Backup',
+    'listS3Backups': 'Backup'
     }
 
 

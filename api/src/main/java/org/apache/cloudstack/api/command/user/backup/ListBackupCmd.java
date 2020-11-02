@@ -30,11 +30,11 @@ import org.apache.cloudstack.api.response.S3BackupResponse;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = "listBackups", description = "List backups by conditions", responseObject = BackupResponse.class, since = "4.2.0", entityType = {Backup.class},
+@APICommand(name = "listS3Backups", description = "List backups by conditions", responseObject = S3BackupResponse.class, since = "4.2.0", entityType = {Backup.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListBackupCmd extends BaseListTaggedResourcesCmd {
 
-    private static final String s_name = "listbackupsresponse";
+    private static final String s_name = "lists3backupsresponse";
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = BackupResponse.class, description = "lists backup snapshot by eTag ID")
     private Long id;
